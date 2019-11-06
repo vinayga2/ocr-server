@@ -2,8 +2,7 @@ package dynamic.groovy
 
 import com.itextpdf.text.*
 import com.itextpdf.text.pdf.PdfWriter
-import com.optum.ocr.util.AbstractImageReader
-import com.optum.ocr.util.Benchmark
+import com.optum.ocr.util.*
 import dynamic.groovy.mbm.ArchivePdf
 import dynamic.groovy.mbm.PageHighlighter
 import net.sourceforge.tess4j.Tesseract

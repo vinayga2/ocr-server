@@ -6,6 +6,7 @@ import com.itextpdf.text.Image
 import com.itextpdf.text.Paragraph
 import com.itextpdf.text.Phrase
 import org.w3c.dom.NamedNodeMap
+import com.optum.ocr.util.*
 
 import javax.imageio.ImageIO
 import java.awt.Color
