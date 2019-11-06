@@ -70,7 +70,7 @@ public abstract class AbstractImageReader {
         File folderOut = new File(fOut);
 
         File[] listOfFiles = folderOut.listFiles();
-        List<String> lst = Arrays.stream(listOfFiles).filter(file -> file.isDirectory() && new File(file, "Searchable-"+file.getName()).exists()).map(file -> file.getName()).collect(Collectors.toList());
+        List<String> lst = Arrays.stream(listOfFiles).filter(file -> file.isDirectory() && !file.getName().startsWith("Archive") && new File(file, "Searchable-"+file.getName()).exists()).map(file -> file.getName()).collect(Collectors.toList());
         return lst;
     }
 
