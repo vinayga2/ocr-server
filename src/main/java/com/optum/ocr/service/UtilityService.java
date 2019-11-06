@@ -70,4 +70,10 @@ public class UtilityService {
         byte[] bytes = pdf2Image.convert(file);
         return bytes;
     }
+
+    public List<String> viewFaxOnQueue(String folderIn) throws IllegalAccessException, IOException, InstantiationException {
+        AbstractImageReader imageReader = (AbstractImageReader) fileObjectExtractor.getGroovyObject("MBMFaxReader.groovy");
+        List<String> lst = imageReader.viewFaxOnQueue(folderIn);
+        return lst;
+    }
 }

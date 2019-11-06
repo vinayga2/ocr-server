@@ -116,6 +116,8 @@ public abstract class AbstractImageReader {
 
     public abstract void archiveFile(String folderOut, String file);
 
+    public abstract List<String> viewFaxOnQueue(String folderIn);
+
     public static class RectString {
         String str;
         Rectangle rect;

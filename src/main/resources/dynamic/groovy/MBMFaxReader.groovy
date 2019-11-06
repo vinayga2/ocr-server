@@ -89,6 +89,14 @@ class MBMFaxReader extends AbstractImageReader {
         archivePdf.archiveFile(folderOut, file);
     }
 
+    @Override
+    List<String> viewFaxOnQueue(String fIn) {
+        File folderIn = new File(fIn);
+        String[] arr = folderIn.list();
+        List<String> lst = Arrays.asList(arr);
+        return lst;
+    }
+
     void createSearchablePdf(String fOut, File faxFile, java.util.List<ImageIndex> images) throws FileNotFoundException, DocumentException {
         anchorMap = new HashMap<>();
         anchorIndex = 0;

@@ -55,6 +55,12 @@ public class UtilityController {
         return new ResponseEntity(str, HttpStatus.OK);
     }
 
+    @GetMapping("/ocr/viewFaxOnQueue")
+    public ResponseEntity<List<String>> viewFaxOnQueue() throws IllegalAccessException, InstantiationException, IOException {
+        List<String> lst = utilityService.viewFaxOnQueue(folderIn);
+        return new ResponseEntity(lst, HttpStatus.OK);
+    }
+
     @GetMapping("/ocr/files")
     public ResponseEntity<List<String>> getFiles() throws IllegalAccessException, InstantiationException, IOException {
         List<String> lst = utilityService.ocrFiles(folderOut);
