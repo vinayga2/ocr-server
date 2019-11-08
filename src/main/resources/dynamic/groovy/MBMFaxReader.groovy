@@ -20,6 +20,7 @@ import java.nio.file.Files
 import java.util.List
 import java.util.logging.Level
 import java.util.logging.Logger
+import com.optum.ocr.service.*;
 
 class MBMFaxReader extends AbstractImageReader {
 
@@ -31,13 +32,28 @@ class MBMFaxReader extends AbstractImageReader {
         File folderOut = new File(fOut);
         File folderDone = new File(fDone);
 
-        java.util.List<File> listOfFiles = Arrays.asList(folderIn.listFiles());
+        String str = "";
+        java.util.List<File> listOfFiles = Arrays.asList(folderIn.listFiles()).stream().filter({
+            file ->
+                boolean b = file.name.startsWith("NRS") || file.name.startsWith("KRS") || file.name.startsWith("OHUM");
+                if (b) {
+                    str += "<br>"+file.name;
+                }
+                return b;
+        }).collect();
+        if (!str.isEmpty()) {
+            str = "<li>Batch Started for the following files ["+PushService.notificationTime()+"] .... "+str+"</li>";
+            PushService.broadcast("OCR", str);
+        }
         listOfFiles.stream().forEach({faxFile ->
+            long startTime = System.currentTimeMillis();
             byte[] bytes = faxFile.getBytes();
             PDDocument document = PDDocument.load(bytes);
             java.util.List<ImageIndex> images = getImageIndex(document);
             document.close();
 
+            String notif = "<li>    Converting "+faxFile.name+" with "+images.size()+" pages.</li>";
+            PushService.broadcast("OCR", notif);
             File tmp = new File(folderOut, faxFile.getName());
             tmp.mkdir();
 
@@ -71,6 +87,10 @@ class MBMFaxReader extends AbstractImageReader {
             })
             try {
                 createSearchablePdf(fOut, faxFile, images);
+                long endTime = System.currentTimeMillis();
+                long totalSeconds = (endTime - startTime) / 1000;
+                notif = "<li>    Converted "+faxFile.name+" with "+images.size()+" pages for "+totalSeconds+" seconds.</li>";
+                PushService.broadcast("OCR", notif);
             } catch(Exception e) {
                 e.printStackTrace();
             }
@@ -82,6 +102,7 @@ class MBMFaxReader extends AbstractImageReader {
         Logger.getGlobal().log(Level.INFO, "PDF Count == "+listOfFiles.size());
         benchmark.log();
         Logger.getGlobal().log(Level.INFO, "Check timer");
+        PushService.broadcast("OCR", "Conversion Complete.");
     }
 
     void archiveFile(String folderOut, String file) {

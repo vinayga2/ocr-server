@@ -1,5 +1,7 @@
 package com.optum.ocr.service;
 
+import org.apache.commons.collections.KeyValue;
+import org.apache.commons.collections.keyvalue.DefaultKeyValue;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -18,8 +20,18 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @Service
 @EnableScheduling
 public class PushService {
-    final DateFormat DATE_FORMATTER = new SimpleDateFormat("dd-MM-yyyy hh:mm:ss a");
+    private static KeyValue keyValue;
+    final static DateFormat DATE_FORMATTER = new SimpleDateFormat("hh:mm:ss");
     final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
+
+    public static String notificationTime() {
+        String str = DATE_FORMATTER.format(new Date());
+        return str;
+    }
+
+    public static void broadcast(String code, String message) {
+        keyValue = new DefaultKeyValue(code, message);
+    }
 
     public void addEmitter(final SseEmitter emitter) {
         emitters.add(emitter);
@@ -30,16 +42,19 @@ public class PushService {
     }
 
     @Async
-    @Scheduled(fixedRate = 5000)
+    @Scheduled(fixedRate = 10000)
     public void doNotify() throws IOException {
-        List<SseEmitter> deadEmitters = new ArrayList<>();
-        emitters.forEach(emitter -> {
-            try {
-                emitter.send(SseEmitter.event().data(DATE_FORMATTER.format(new Date()) + " : " + UUID.randomUUID().toString()));
-            } catch (Exception e) {
-                deadEmitters.add(emitter);
-            }
-        });
-        emitters.removeAll(deadEmitters);
+        if (keyValue != null) {
+            List<SseEmitter> deadEmitters = new ArrayList<>();
+            emitters.forEach(emitter -> {
+                try {
+                    emitter.send(SseEmitter.event().data(keyValue));
+                } catch (Exception e) {
+                    deadEmitters.add(emitter);
+                }
+            });
+            emitters.removeAll(deadEmitters);
+            keyValue = null;
+        }
     }
 }
