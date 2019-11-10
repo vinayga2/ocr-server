@@ -69,7 +69,7 @@ public abstract class AbstractImageReader {
         File folderOut = new File(fOut);
 
         File[] listOfFiles = folderOut.listFiles();
-        List<String> lst = Arrays.stream(listOfFiles).filter(file -> file.isDirectory() && !file.getName().startsWith("Archive") && new File(file, "Searchable-"+file.getName()).exists()).map(file -> file.getName()).collect(Collectors.toList());
+        List<String> lst = Arrays.stream(listOfFiles).filter(file -> file.isDirectory() && !file.getName().startsWith("Archive")).map(file -> file.getName()).collect(Collectors.toList());
         return lst;
     }
 
@@ -86,12 +86,12 @@ public abstract class AbstractImageReader {
         ocrObj.ocrPageObjs = new ArrayList<>();
         for (String pageName : lst) {
             try {
-                String hocrName = pageName.replaceAll("img", "hocr").replaceAll(".jpg", ".html");
-                String hocr = Utils.readFile(faxFolder, hocrName);
+//                String hocrName = pageName.replaceAll("img", "hocr").replaceAll(".jpg", ".html");
+//                String hocr = Utils.readFile(faxFolder, hocrName);
                 OcrObj.OcrPageObj ocrPageObj = new OcrObj.OcrPageObj();
                 ocrPageObj.pageNum = Integer.parseInt(pageName.replaceAll("img-", "").replaceAll(".jpg", ""));
                 ocrPageObj.pageFile = pageName;
-                ocrPageObj.pageHocr = hocr;
+//                ocrPageObj.pageHocr = hocr;
                 ocrObj.ocrPageObjs.add(ocrPageObj);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -116,6 +116,8 @@ public abstract class AbstractImageReader {
     public abstract void archiveFile(String folderOut, String file);
 
     public abstract List<String> viewFaxOnQueue(String folderIn);
+
+    public abstract String createSearchable(String folderOut, String file);
 
     public static class RectString {
         String str;
@@ -309,7 +311,7 @@ public abstract class AbstractImageReader {
     public static class ImageIndex {
         public int imageIndex;
         public RenderedImage image;
-        File imgFile;
-        String fileHocr;
+        public File imgFile;
+        public String fileHocr;
     }
 }

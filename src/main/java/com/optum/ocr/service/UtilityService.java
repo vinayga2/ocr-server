@@ -76,4 +76,10 @@ public class UtilityService {
         List<String> lst = imageReader.viewFaxOnQueue(folderIn);
         return lst;
     }
+
+    public String createSearchable(String folderOut, String file) throws IllegalAccessException, IOException, InstantiationException {
+        AbstractImageReader imageReader = (AbstractImageReader) fileObjectExtractor.getGroovyObject("MBMFaxReader.groovy");
+        String str = imageReader.createSearchable(folderOut, file);
+        return str;
+    }
 }

@@ -15,7 +15,7 @@ import java.awt.image.BufferedImage
 import java.awt.image.RenderedImage
 
 class PageHighlighter {
-    private File faxFile;
+    private String faxFile;
     protected Map<String, List<PageNode>> anchorMapNode = new HashMap<>();
     protected Map<String, List<Anchor>> anchorMap = new HashMap<>();
     protected TextForHighlight textForHighlight;
@@ -23,7 +23,7 @@ class PageHighlighter {
     PageHighlighter() {
     }
 
-    void init(File faxFile) {
+    void init(String faxFile) {
         this.faxFile = faxFile;
         textForHighlight = new TextForHighlight();
         textForHighlight.init(faxFile);

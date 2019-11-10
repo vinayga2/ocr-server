@@ -1,7 +1,7 @@
 package dynamic.groovy.mbm
 
 class TextForHighlight {
-    File file;
+    String filename;
     List<String> highlight = new ArrayList<>();
 
     final static String KRS = """
@@ -55,8 +55,8 @@ class TextForHighlight {
     TextForHighlight() {
     }
 
-    void init(File f) {
-        file = f;
+    void init(String f) {
+        filename = f;
         initText();
     }
 
@@ -66,13 +66,13 @@ class TextForHighlight {
 
     void initText() {
         String mergeText = null;
-        if (file.name.startsWith("OHUM")) {
+        if (filename.startsWith("OHUM")) {
             mergeText = OHUM;
         }
-        else if (file.name.startsWith("KRS")) {
+        else if (filename.startsWith("KRS")) {
             mergeText = KRS;
         }
-        else if (file.name.startsWith("NRS")) {
+        else if (filename.startsWith("NRS")) {
             mergeText = NRS;
         }
         String[] strArr = mergeText.split("[,\\s]");

@@ -49,7 +49,13 @@ public class UtilityController {
                 .body(resource);
     }
 
-    @GetMapping("/runBatch")
+    @GetMapping("/ocr/createSearchable/{file}")
+    public ResponseEntity<String> createSearchable(@PathVariable("file") String file) throws IllegalAccessException, InstantiationException, IOException {
+        String str = utilityService.createSearchable(folderOut, file);
+        return new ResponseEntity(str, HttpStatus.OK);
+    }
+
+    @GetMapping("/ocr/runBatch")
     public ResponseEntity<String> runBatch() throws IllegalAccessException, InstantiationException, IOException {
         String str = utilityService.ocrBatch(folderIn, folderOut, folderDone, tesseractFolder);
         return new ResponseEntity(str, HttpStatus.OK);

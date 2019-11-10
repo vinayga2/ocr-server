@@ -1,7 +1,9 @@
 package dynamic.groovy
 
 import com.itextpdf.text.*
+import com.itextpdf.text.pdf.PdfContentByte
 import com.itextpdf.text.pdf.PdfWriter
+import com.lowagie.text.pdf.ArabicLigaturizer
 import com.optum.ocr.util.*
 import dynamic.groovy.mbm.ArchivePdf
 import dynamic.groovy.mbm.PageHighlighter
@@ -48,7 +50,7 @@ class MBMFaxReader extends AbstractImageReader {
 
         byte[] bytes = faxFile.getBytes();
         PDDocument document = PDDocument.load(bytes);
-        java.util.List<ImageIndex> images = getImageIndex(document);
+        List<ImageIndex> images = getImageIndex(document);
         document.close();
 
         String notif = "<li>    Converting "+faxFile.name+" with "+images.size()+" pages.</li>";
@@ -67,7 +69,7 @@ class MBMFaxReader extends AbstractImageReader {
         }
         images.parallelStream().forEach({ind ->
             try {
-                ind.image = OcrAlignImage.getAlignedImage( (BufferedImage) ind.image);
+//                ind.image = OcrAlignImage.getAlignedImage( (BufferedImage) ind.image);
                 String fileImage = "img-"+ind.imageIndex+".jpg";
                 File fTmp = new File(tmp, fileImage);
                 ImageIO.write(ind.image, "jpg", fTmp);
@@ -94,12 +96,6 @@ class MBMFaxReader extends AbstractImageReader {
                 e.printStackTrace();
             }
         })
-
-//        try {
-//            createSearchablePdf(folderOut, faxFile, images);
-//        } catch(Exception e) {
-//            e.printStackTrace();
-//        }
         File outFile = new File(folderDone, faxFile.getName());
         Files.deleteIfExists(outFile.toPath());
         Files.move(faxFile.toPath(), outFile.toPath());
@@ -148,28 +144,59 @@ class MBMFaxReader extends AbstractImageReader {
         return lst;
     }
 
-    void createSearchablePdf(String fOut, File faxFile, java.util.List<ImageIndex> images) throws FileNotFoundException, DocumentException {
+    @Override
+    String createSearchable(String folderOut, String faxFile) {
+        File folder = new File(folderOut, faxFile);
+        String[] fImages = folder.list(new FilenameFilter() {
+            @Override
+            boolean accept(File file, String s) {
+                return s.startsWith("img-");
+            }
+        });
+        Arrays.sort(fImages);
+        List<ImageIndex> images = new ArrayList<>();
+        Arrays.asList(fImages).stream().forEach({ imgFile ->
+            String index = imgFile.replaceAll("img-", "").replaceAll(".jpg", "");
+            String hocrFile = "hocr-" + index + ".html";
+            Logger.getGlobal().log(Level.INFO, imgFile);
+            ImageIndex ind = new ImageIndex();
+            ind.imgFile = new File(folder, imgFile);
+            ind.imageIndex = Integer.parseInt(index);
+            ind.image = Utils.toBufferedImage(ind.imgFile);
+            ind.fileHocr = hocrFile;
+            images.add(ind);
+        });
+        createSearchablePdf(folderOut, faxFile, images);
+    }
+
+    void createSearchablePdf(String fOut, String faxFilename, List<ImageIndex> images) throws FileNotFoundException, DocumentException {
         anchorMap = new HashMap<>();
         anchorIndex = 0;
         File folderOut = new File(fOut);
-        File tmp = new File(folderOut, faxFile.getName());
+        File tmp = new File(folderOut, faxFilename);
 
-        File searchFile = new File(tmp, "Searchable-" + faxFile.getName());
+        File searchFile = new File(tmp, "Searchable-" + faxFilename);
         searchFile.delete();
         com.itextpdf.text.Document searchablePdf = new com.itextpdf.text.Document(new com.itextpdf.text.Rectangle(images.get(0).image.getWidth(), images.get(0).image.getHeight()));
-        PdfWriter.getInstance(searchablePdf, new FileOutputStream(searchFile));
+        PdfWriter writer = PdfWriter.getInstance(searchablePdf, new FileOutputStream(searchFile));
         searchablePdf.open();
 
         PageHighlighter highlighter = new PageHighlighter();
-        highlighter.init(faxFile);
+        highlighter.init(faxFilename);
         images.stream().forEach({ind ->
             if (ind.fileHocr != null) {
                 int index = ind.imageIndex;
                 RenderedImage img = ind.image;
                 String fileHocr = ind.fileHocr;
                 try {
-                    String hocr = Utils.readFile(tmp, fileHocr);
-                    addSearchablePage(searchablePdf, hocr, img, myFont, index, highlighter);
+                    File hocrFile = new File(tmp, fileHocr);
+                    if (hocrFile.exists()) {
+                        String hocr = Utils.readFile(tmp, fileHocr);
+                        addSearchablePage(writer, searchablePdf, hocr, img, myFont, index, highlighter);
+                    }
+                    else {
+                        addBackGroundPage(writer, searchablePdf, img, index);
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -180,9 +207,24 @@ class MBMFaxReader extends AbstractImageReader {
         searchablePdf.close();
     }
 
-    void addSearchablePage(com.itextpdf.text.Document document, String hocr, RenderedImage image, Font font, int pageNum, PageHighlighter highlighter) throws ParserConfigurationException, SAXException, DocumentException, IOException {
-        document.setPageSize(new Rectangle(image.getHeight(), image.getWidth()));
+    void addBackGroundPage(PdfWriter writer, com.itextpdf.text.Document document, RenderedImage image, int pageNum) {
+        Rectangle rec = new Rectangle(image.getWidth() * 2, image.getHeight());
+        document.setPageSize(rec);
         document.newPage();
+        addBackground(writer, image, rec);
+
+        Paragraph paragraph = new Paragraph();
+        Anchor anchor = createTarget("This page is not yet extracted.", anchorIndex++);
+        paragraph.add(anchor);
+
+        document.add(paragraph);
+    }
+
+    void addSearchablePage(PdfWriter writer, com.itextpdf.text.Document document, String hocr, RenderedImage image, Font font, int pageNum, PageHighlighter highlighter) throws ParserConfigurationException, SAXException, DocumentException, IOException {
+        Rectangle rec = new Rectangle(image.getWidth() * 2, image.getHeight());
+        document.setPageSize(rec);
+        document.newPage();
+        addBackground(writer, image, rec);
 
         String xml = hocr.substring(hocr.indexOf('\n')+1);
         InputStream stream = new ByteArrayInputStream(xml.getBytes());
@@ -208,6 +250,14 @@ class MBMFaxReader extends AbstractImageReader {
             paragraph.setIndentationLeft(x);
             document.add(paragraph);
         }
+    }
+
+    void addBackground(PdfWriter writer, RenderedImage image, Rectangle rec) {
+        PdfContentByte canvas = writer.getDirectContentUnder();
+        Image img = Image.getInstance(Utils.toByteArray(image));
+        img.scaleToFit(rec);
+        img.setAbsolutePosition((int)(rec.width / 2), 0);
+        canvas.addImage(img);
     }
 
     Paragraph getLineText(Node ocrLine, Paragraph paragraph, int pageNum, RenderedImage image, PageHighlighter highlighter) {
