@@ -139,7 +139,7 @@
 		<dependency>
 			<groupId>net.sourceforge.tess4j</groupId>
 			<artifactId>tess4j</artifactId>
-			<version>4.0.0</version>
+			<version>4.4.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.bytedeco</groupId>
@@ -219,13 +219,6 @@
 
 	<repositories>
 		<repository>
-			<id>umiacs</id>
-			<url>https://scm.umiacs.umd.edu/maven/adapt/content/repositories/releases/</url>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-		</repository>
-		<repository>
 			<id>central</id>
 			<url>https://repo.maven.apache.org/maven2</url>
 			<snapshots>
@@ -239,13 +232,20 @@
 				<enabled>false</enabled>
 			</snapshots>
 		</repository>
-		<repository>
-			<id>nuiton</id>
-			<url>http://maven.nuiton.org/release/</url>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-		</repository>
+		<!--		<repository>-->
+		<!--			<id>umiacs</id>-->
+		<!--			<url>https://scm.umiacs.umd.edu/maven/adapt/content/repositories/releases/</url>-->
+		<!--			<snapshots>-->
+		<!--				<enabled>false</enabled>-->
+		<!--			</snapshots>-->
+		<!--		</repository>-->
+<!--		<repository>-->
+<!--			<id>nuiton</id>-->
+<!--			<url>http://maven.nuiton.org/release/</url>-->
+<!--			<snapshots>-->
+<!--				<enabled>false</enabled>-->
+<!--			</snapshots>-->
+<!--		</repository>-->
 	</repositories>
 
 </project>

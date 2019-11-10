@@ -20,7 +20,6 @@ import javax.imageio.ImageIO;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import java.awt.*;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.awt.image.RenderedImage;
@@ -108,7 +107,7 @@ public abstract class AbstractImageReader {
         return bytes;
     }
 
-    public void uploadPdfImage(String fIn, MultipartFile file) throws IOException {
+    public void uploadPdfImage(String fIn, String folderOut, String folderDone, String tesseractFolder, MultipartFile file) throws IOException {
         File faxFile = new File(fIn, file.getOriginalFilename());
         byte[] bytes = file.getBytes();
         Files.write(bytes, faxFile);

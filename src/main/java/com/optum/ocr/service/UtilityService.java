@@ -25,9 +25,9 @@ public class UtilityService {
         return bytes;
     }
 
-    public void ocrUpload(String folderIn, MultipartFile file) throws InstantiationException, IllegalAccessException, IOException {
+    public void ocrUpload(String folderIn, String folderOut, String folderDone, String tesseractFolder, MultipartFile file) throws InstantiationException, IllegalAccessException, IOException {
         AbstractImageReader imageReader = (AbstractImageReader) fileObjectExtractor.getGroovyObject("MBMFaxReader.groovy");
-        imageReader.uploadPdfImage(folderIn, file);
+        imageReader.uploadPdfImage(folderIn, folderOut, folderDone, tesseractFolder, file);
     }
 
     public byte[] ocr(MultipartFile file) throws InstantiationException, IllegalAccessException, IOException {

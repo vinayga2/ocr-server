@@ -32,7 +32,7 @@ public class UtilityController {
     private String folderDone;
 
     @Value("${tesseract.data}")
-    private String tesseractDate;
+    private String tesseractFolder;
 
     @Autowired
     UtilityService utilityService;
@@ -51,7 +51,7 @@ public class UtilityController {
 
     @GetMapping("/runBatch")
     public ResponseEntity<String> runBatch() throws IllegalAccessException, InstantiationException, IOException {
-        String str = utilityService.ocrBatch(folderIn, folderOut, folderDone, tesseractDate);
+        String str = utilityService.ocrBatch(folderIn, folderOut, folderDone, tesseractFolder);
         return new ResponseEntity(str, HttpStatus.OK);
     }
 
@@ -81,7 +81,7 @@ public class UtilityController {
 
     @PostMapping("/ocr/upload")
     public ResponseEntity<?> uploadFax(@RequestParam("file") MultipartFile file, HttpServletRequest request) throws IllegalAccessException, InstantiationException, IOException {
-        utilityService.ocrUpload(folderIn, file);
+        utilityService.ocrUpload(folderIn, folderOut, folderDone, tesseractFolder, file);
         return new ResponseEntity("Ok", HttpStatus.OK);
     }
 
