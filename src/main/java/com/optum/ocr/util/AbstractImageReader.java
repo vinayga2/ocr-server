@@ -205,16 +205,26 @@ public abstract class AbstractImageReader {
     }
 
     public List<ImageIndex> getImageIndex(PDDocument document) throws IOException {
-        List<ImageIndex> lst = new ArrayList<>();
         List<RenderedImage> images = new ArrayList<>();
         for (PDPage page : document.getPages()) {
             images.addAll(OcrUtility.getImagesFromResources(page.getResources()));
         }
+        List<ImageIndex> tmp = new ArrayList<>();
         for (int i = 1; i <= images.size(); i++) {
             ImageIndex ind = new ImageIndex();
             ind.image = images.get(i - 1);
             ind.imageIndex = 1000 + i;
-            lst.add(ind);
+            tmp.add(ind);
+        }
+
+        List<ImageIndex> lst = new ArrayList<>();
+        while (tmp.size() > 0) {
+            int middle = tmp.size() / 2;
+            ImageIndex top = tmp.remove(middle);
+            lst.add(top);
+        }
+        if (tmp.size() > 0) {
+            lst.addAll(tmp);
         }
         return lst;
     }

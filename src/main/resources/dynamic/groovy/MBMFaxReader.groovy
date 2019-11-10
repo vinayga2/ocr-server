@@ -6,6 +6,7 @@ import com.optum.ocr.util.*
 import dynamic.groovy.mbm.ArchivePdf
 import dynamic.groovy.mbm.PageHighlighter
 import net.sourceforge.tess4j.Tesseract
+import net.sourceforge.tess4j.Tesseract1
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.springframework.web.multipart.MultipartFile
 import org.w3c.dom.*
@@ -21,9 +22,12 @@ import java.nio.file.Files
 import java.util.List
 import java.util.logging.Level
 import java.util.logging.Logger
-import com.optum.ocr.service.*;
+import com.optum.ocr.service.*
+
+import java.util.stream.IntStream;
 
 class MBMFaxReader extends AbstractImageReader {
+    static List<Tesseract1> tesseract1List = new ArrayList<>();
 
     @Override
     void uploadPdfImage(String fIn, String folderOut, String folderDone, String tesseractFolder, MultipartFile file) throws IOException {
@@ -39,7 +43,9 @@ class MBMFaxReader extends AbstractImageReader {
     }
 
     void runSingle(String folderOut, String folderDone, String tesseractFolder, File faxFile) {
-        long startTime = System.currentTimeMillis();
+        Benchmark benchmark = new Benchmark(this.getClass());
+        benchmark.start("RUN OCR BATCH");
+
         byte[] bytes = faxFile.getBytes();
         PDDocument document = PDDocument.load(bytes);
         java.util.List<ImageIndex> images = getImageIndex(document);
@@ -50,11 +56,18 @@ class MBMFaxReader extends AbstractImageReader {
         File tmp = new File(folderOut, faxFile.getName());
         tmp.mkdir();
 
-        images.stream().forEach({ind ->
+        Logger.getGlobal().log(Level.INFO, "Init Tesseract List");
+        if (tesseract1List.isEmpty()) {
+            IntStream.range(1, 20).forEach({
+                Tesseract1 tesseract = new Tesseract1();
+                tesseract.setHocr(true);
+                tesseract.setDatapath(tesseractFolder);
+                tesseract1List.add(tesseract);
+            });
+        }
+        images.parallelStream().forEach({ind ->
             try {
-                Logger.getGlobal().log(Level.INFO, "Aligning/Writing image "+faxFile.getName()+" - "+ind.imageIndex);
                 ind.image = OcrAlignImage.getAlignedImage( (BufferedImage) ind.image);
-
                 String fileImage = "img-"+ind.imageIndex+".jpg";
                 File fTmp = new File(tmp, fileImage);
                 ImageIO.write(ind.image, "jpg", fTmp);
@@ -65,31 +78,32 @@ class MBMFaxReader extends AbstractImageReader {
             }
         })
         images.stream().forEach({ind ->
-            if (ind.imgFile!=null) {
+            try {
                 String fileHocr = "hocr-"+ind.imageIndex+".html";
+                File fTmpHocr = new File(tmp, fileHocr);
                 Logger.getGlobal().log(Level.INFO, "Tesseract "+fileHocr);
 
-                Tesseract tesseract1 = new Tesseract();
-                tesseract1.setHocr(true);
-                tesseract1.setDatapath(tesseractFolder);
-                String hocr = tesseract1.doOCR(ind.imgFile);
-                File fTmpHocr = new File(tmp, fileHocr);
+                Tesseract1 tesseract = tesseract1List.remove(0);
+                String hocr = tesseract.doOCR(ind.imgFile);
                 Utils.writeToFile(fTmpHocr, hocr);
                 ind.fileHocr = fileHocr;
+
+                tesseract1List.add(tesseract);
+            }
+            catch (Exception e) {
+                e.printStackTrace();
             }
         })
-        try {
-            createSearchablePdf(folderOut, faxFile, images);
-            long endTime = System.currentTimeMillis();
-            long totalSeconds = (endTime - startTime) / 1000;
-            notif = "<li>    Converted "+faxFile.name+" with "+images.size()+" pages for "+totalSeconds+" seconds.</li>";
-            PushService.broadcast("OCR", notif);
-        } catch(Exception e) {
-            e.printStackTrace();
-        }
+
+//        try {
+//            createSearchablePdf(folderOut, faxFile, images);
+//        } catch(Exception e) {
+//            e.printStackTrace();
+//        }
         File outFile = new File(folderDone, faxFile.getName());
         Files.deleteIfExists(outFile.toPath());
         Files.move(faxFile.toPath(), outFile.toPath());
+        benchmark.log();
     }
 
     void runBatch(String fIn, String folderOut, String folderDone, String tesseractFolder) {
