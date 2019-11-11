@@ -3,11 +3,9 @@ package dynamic.groovy
 import com.itextpdf.text.*
 import com.itextpdf.text.pdf.PdfContentByte
 import com.itextpdf.text.pdf.PdfWriter
-import com.lowagie.text.pdf.ArabicLigaturizer
 import com.optum.ocr.util.*
 import dynamic.groovy.mbm.ArchivePdf
 import dynamic.groovy.mbm.PageHighlighter
-import net.sourceforge.tess4j.Tesseract
 import net.sourceforge.tess4j.Tesseract1
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.springframework.web.multipart.MultipartFile
@@ -18,7 +16,6 @@ import javax.imageio.ImageIO
 import javax.xml.parsers.DocumentBuilder
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.parsers.ParserConfigurationException
-import java.awt.image.BufferedImage
 import java.awt.image.RenderedImage
 import java.nio.file.Files
 import java.util.List
@@ -208,7 +205,7 @@ class MBMFaxReader extends AbstractImageReader {
     }
 
     void addBackGroundPage(PdfWriter writer, com.itextpdf.text.Document document, RenderedImage image, int pageNum) {
-        Rectangle rec = new Rectangle(image.getWidth() * 2, image.getHeight());
+        Rectangle rec = new Rectangle(image.getWidth() * 1.2, image.getHeight());
         document.setPageSize(rec);
         document.newPage();
         addBackground(writer, image, rec);
@@ -221,7 +218,7 @@ class MBMFaxReader extends AbstractImageReader {
     }
 
     void addSearchablePage(PdfWriter writer, com.itextpdf.text.Document document, String hocr, RenderedImage image, Font font, int pageNum, PageHighlighter highlighter) throws ParserConfigurationException, SAXException, DocumentException, IOException {
-        Rectangle rec = new Rectangle(image.getWidth() * 2, image.getHeight());
+        Rectangle rec = new Rectangle(image.getWidth() * 1.2, image.getHeight());
         document.setPageSize(rec);
         document.newPage();
         addBackground(writer, image, rec);
@@ -255,8 +252,10 @@ class MBMFaxReader extends AbstractImageReader {
     void addBackground(PdfWriter writer, RenderedImage image, Rectangle rec) {
         PdfContentByte canvas = writer.getDirectContentUnder();
         Image img = Image.getInstance(Utils.toByteArray(image));
-        img.scaleToFit(rec);
-        img.setAbsolutePosition((int)(rec.width / 2), 0);
+
+        Rectangle scaleRec = new Rectangle( (int)(rec.width * 0.5), rec.height );
+        img.scaleToFit(scaleRec);
+        img.setAbsolutePosition((int)(rec.width / 2), 200);
         canvas.addImage(img);
     }
 
@@ -282,5 +281,4 @@ class MBMFaxReader extends AbstractImageReader {
         }
         return paragraph;
     }
-
 }
