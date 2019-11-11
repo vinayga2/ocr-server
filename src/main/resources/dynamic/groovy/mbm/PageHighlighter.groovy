@@ -108,7 +108,7 @@ class PageHighlighter {
 
         int newX = x0;
         int newY = y0;
-        int width = (int) (image.width / 2);
+        int width = image.width;
         int height = 75;
         if (x0+100 < image.width) {
             newX = x0 - 50;
