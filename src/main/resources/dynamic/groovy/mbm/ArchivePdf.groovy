@@ -7,6 +7,12 @@ class ArchivePdf {
         System.out.println("TEST");
         File folder = new File(folderOut, file);
         File archivedFolder = new File(folderOut, "Archived-"+file);
-        Files.move(folder.toPath(), archivedFolder.toPath());
+        try {
+            Files.move(folder.toPath(), archivedFolder.toPath());
+        }
+        catch (Exception e) {
+            folder.deleteDir();
+            e.printStackTrace();
+        }
     }
 }
