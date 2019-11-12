@@ -26,8 +26,6 @@ import com.optum.ocr.service.*
 import java.util.stream.IntStream;
 
 class MBMFaxReader extends AbstractImageReader {
-    static List<Tesseract1> tesseract1List = new ArrayList<>();
-
     @Override
     void uploadPdfImage(String fIn, String folderOut, String folderDone, String tesseractFolder, MultipartFile file) throws IOException {
         super.uploadPdfImage(fIn, folderOut, folderDone, tesseractFolder, file);
@@ -56,14 +54,6 @@ class MBMFaxReader extends AbstractImageReader {
         tmp.mkdir();
 
         Logger.getGlobal().log(Level.INFO, "Init Tesseract List");
-        if (tesseract1List.isEmpty()) {
-            IntStream.range(1, 20).forEach({
-                Tesseract1 tesseract = new Tesseract1();
-                tesseract.setHocr(true);
-                tesseract.setDatapath(tesseractFolder);
-                tesseract1List.add(tesseract);
-            });
-        }
         images.parallelStream().forEach({ind ->
             try {
 //                ind.image = OcrAlignImage.getAlignedImage( (BufferedImage) ind.image);
@@ -76,18 +66,19 @@ class MBMFaxReader extends AbstractImageReader {
                 e.printStackTrace();
             }
         })
-        images.stream().forEach({ind ->
+        images.parallelStream().forEach({ind ->
             try {
                 String fileHocr = "hocr-"+ind.imageIndex+".html";
                 File fTmpHocr = new File(tmp, fileHocr);
                 Logger.getGlobal().log(Level.INFO, "Tesseract "+fileHocr);
 
-                Tesseract1 tesseract = tesseract1List.remove(0);
+                Tesseract1 tesseract = new Tesseract1();
+                tesseract.setHocr(true);
+                tesseract.setDatapath(tesseractFolder);
+
                 String hocr = tesseract.doOCR(ind.imgFile);
                 Utils.writeToFile(fTmpHocr, hocr);
                 ind.fileHocr = fileHocr;
-
-                tesseract1List.add(tesseract);
             }
             catch (Exception e) {
                 e.printStackTrace();
