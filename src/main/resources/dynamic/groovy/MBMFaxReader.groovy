@@ -66,24 +66,32 @@ class MBMFaxReader extends AbstractImageReader {
                 e.printStackTrace();
             }
         })
-        images.parallelStream().forEach({ind ->
-            try {
-                String fileHocr = "hocr-"+ind.imageIndex+".html";
-                File fTmpHocr = new File(tmp, fileHocr);
-                Logger.getGlobal().log(Level.INFO, "Tesseract "+fileHocr);
-
-                Tesseract1 tesseract = new Tesseract1();
-                tesseract.setHocr(true);
-                tesseract.setDatapath(tesseractFolder);
-
-                String hocr = tesseract.doOCR(ind.imgFile);
-                Utils.writeToFile(fTmpHocr, hocr);
-                ind.fileHocr = fileHocr;
+        while (!images.isEmpty()) {
+            List<ImageIndex> tmpLst = new ArrayList<>();
+            for (int i=0; i<3; i++) {
+                if (!images.isEmpty()) {
+                    tmpLst.add(images.remove(0));
+                }
             }
-            catch (Exception e) {
-                e.printStackTrace();
-            }
-        })
+            tmpLst.parallelStream().forEach({ ind ->
+                try {
+                    String fileHocr = "hocr-"+ind.imageIndex+".html";
+                    File fTmpHocr = new File(tmp, fileHocr);
+                    Logger.getGlobal().log(Level.INFO, "Tesseract "+fileHocr);
+
+                    Tesseract1 tesseract = new Tesseract1();
+                    tesseract.setHocr(true);
+                    tesseract.setDatapath(tesseractFolder);
+
+                    String hocr = tesseract.doOCR(ind.imgFile);
+                    Utils.writeToFile(fTmpHocr, hocr);
+                    ind.fileHocr = fileHocr;
+                }
+                catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
+        }
         File outFile = new File(folderDone, faxFile.getName());
         Files.deleteIfExists(outFile.toPath());
         Files.move(faxFile.toPath(), outFile.toPath());
