@@ -33,8 +33,11 @@ import java.util.stream.Collectors;
 public abstract class AbstractImageReader {
     protected boolean batchRunning = false;
     protected static com.itextpdf.text.Font myFont = new com.itextpdf.text.Font(com.itextpdf.text.Font.FontFamily.TIMES_ROMAN, 10, com.itextpdf.text.Font.NORMAL, BaseColor.BLACK);
-    public static com.itextpdf.text.Font boldFont = new com.itextpdf.text.Font(com.itextpdf.text.Font.FontFamily.TIMES_ROMAN, 14, com.itextpdf.text.Font.BOLD, BaseColor.BLUE);
+    public static com.itextpdf.text.Font boldFont = new com.itextpdf.text.Font(com.itextpdf.text.Font.FontFamily.TIMES_ROMAN, 12, com.itextpdf.text.Font.BOLD, BaseColor.BLUE);
     protected static com.itextpdf.text.Font normalFont = new com.itextpdf.text.Font(com.itextpdf.text.Font.FontFamily.TIMES_ROMAN, 12, com.itextpdf.text.Font.NORMAL);
+    protected static com.itextpdf.text.Font normalMidConfidenceFont = new com.itextpdf.text.Font(com.itextpdf.text.Font.FontFamily.TIMES_ROMAN, 12, com.itextpdf.text.Font.NORMAL, BaseColor.DARK_GRAY);
+    protected static com.itextpdf.text.Font normalLowConfidenceFont = new com.itextpdf.text.Font(com.itextpdf.text.Font.FontFamily.TIMES_ROMAN, 12, com.itextpdf.text.Font.NORMAL, BaseColor.LIGHT_GRAY);
+
     protected Map<String, List<Anchor>> anchorMap = new HashMap<>();
     protected int anchorIndex = 0;
 

@@ -63,7 +63,7 @@ class MBMFaxReader extends AbstractImageReader {
         Logger.getGlobal().log(Level.INFO, "Init Tesseract List");
         images.parallelStream().forEach({ind ->
             try {
-//                ind.image = OcrAlignImage.getAlignedImage( (BufferedImage) ind.image);
+                ind.image = OcrAlignImage.getAlignedImage( (BufferedImage) ind.image);
                 String fileImage = "img-"+ind.imageIndex+".jpg";
                 File fTmp = new File(tmp, fileImage);
                 ImageIO.write(ind.image, "jpg", fTmp);
@@ -302,6 +302,7 @@ class MBMFaxReader extends AbstractImageReader {
                 String str = getEndString(element);
                 String[] title = element.getAttribute("title").split(" ");
                 float positionX = Float.parseFloat(title[1]);
+                int confidence = Integer.parseInt(title[6]);
 
                 if (highlighter.existInHighlight(str, pageNum)) {
                     anchorIndex++;
@@ -311,8 +312,16 @@ class MBMFaxReader extends AbstractImageReader {
                     paragraph.add(anchor);
                 }
                 else {
-                    Phrase normal = new Phrase(str+" ", normalFont);
-                    paragraph.add(normal);
+                    if (confidence < 30) {
+                        Phrase normal = new Phrase(str+" ", normalLowConfidenceFont);
+                        paragraph.add(normal);
+                    } else if (confidence < 70) {
+                        Phrase normal = new Phrase(str+" ", normalMidConfidenceFont);
+                        paragraph.add(normal);
+                    } else {
+                        Phrase normal = new Phrase(str+" ", normalFont);
+                        paragraph.add(normal);
+                    }
                 }
                 spaceCount = countSpaces(str, oldPositionX, positionX);
                 oldPositionX = positionX;
