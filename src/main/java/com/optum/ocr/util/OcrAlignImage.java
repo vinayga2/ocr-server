@@ -25,7 +25,8 @@ public class OcrAlignImage {
         lst = getDegreeSteps(degreeImage.degree, 0.01, 2);
         degreeImage = getBestAligned(lst, degreeImage.bufferedImage);
         displayBestPass("Third pass", degreeImage);
-        return (BufferedImage) cleanMargin(degreeImage.bufferedImage);
+//        return (BufferedImage) cleanMargin(degreeImage.bufferedImage);
+        return degreeImage.bufferedImage;
     }
 
     static RenderedImage cleanMargin(RenderedImage orig) {

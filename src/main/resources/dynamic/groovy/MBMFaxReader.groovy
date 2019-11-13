@@ -313,11 +313,11 @@ class MBMFaxReader extends AbstractImageReader {
                 }
                 else {
                     if (confidence < 30) {
-                        Phrase normal = new Phrase(str+" ", normalLowConfidenceFont);
-                        paragraph.add(normal);
-                    } else if (confidence < 70) {
                         Phrase normal = new Phrase(str+" ", normalMidConfidenceFont);
                         paragraph.add(normal);
+//                    } else if (confidence < 70) {
+//                        Phrase normal = new Phrase(str+" ", normalMidConfidenceFont);
+//                        paragraph.add(normal);
                     } else {
                         Phrase normal = new Phrase(str+" ", normalFont);
                         paragraph.add(normal);
