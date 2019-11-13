@@ -1,9 +1,9 @@
 package dynamic.groovy
 
 import com.itextpdf.text.*
+import com.itextpdf.text.pdf.ColumnText
 import com.itextpdf.text.pdf.PdfContentByte
 import com.itextpdf.text.pdf.PdfWriter
-import com.optum.ocr.config.InitializerConfig
 import com.optum.ocr.util.*
 import dynamic.groovy.mbm.ArchivePdf
 import dynamic.groovy.mbm.PageHighlighter
@@ -17,6 +17,9 @@ import javax.imageio.ImageIO
 import javax.xml.parsers.DocumentBuilder
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.parsers.ParserConfigurationException
+import java.awt.Graphics
+import java.awt.Graphics2D
+import java.awt.image.BufferedImage
 import java.awt.image.RenderedImage
 import java.nio.file.Files
 import java.util.List
@@ -28,6 +31,8 @@ import com.optum.ocr.service.*
 import java.util.stream.IntStream;
 
 class MBMFaxReader extends AbstractImageReader {
+    static Graphics graphics;
+
     @Override
     void uploadPdfImage(String fIn, String folderOut, String folderDone, String tesseractFolder, MultipartFile file) throws IOException {
         super.uploadPdfImage(fIn, folderOut, folderDone, tesseractFolder, file);
@@ -208,6 +213,9 @@ class MBMFaxReader extends AbstractImageReader {
             if (ind.fileHocr != null) {
                 int index = ind.imageIndex;
                 RenderedImage img = ind.image;
+                if (graphics == null) {
+                    graphics = ((BufferedImage) img).createGraphics();
+                }
                 String fileHocr = ind.fileHocr;
                 try {
                     File hocrFile = new File(tmp, fileHocr);
@@ -259,16 +267,11 @@ class MBMFaxReader extends AbstractImageReader {
         for (int i=0; i<nodeList.size(); i++) {
             org.w3c.dom.Element element = (org.w3c.dom.Element) nodeList.get(i);
             String[] title = element.getAttribute("title").split(" ");
-            float x = Float.parseFloat(title[1]);
-            if (x >= 500) {
-                x = 300;
-            }
-            float y = Float.parseFloat(title[2]);
+            float x1 = Float.parseFloat(title[1]);
 
             Paragraph paragraph = new Paragraph();
-            paragraph = getLineText(element, paragraph, pageNum, image, highlighter);
+            paragraph = getLineText(x1, element, paragraph, pageNum, image, highlighter);
 
-            paragraph.setIndentationLeft(x);
             document.add(paragraph);
         }
     }
@@ -283,7 +286,61 @@ class MBMFaxReader extends AbstractImageReader {
         canvas.addImage(img);
     }
 
-    Paragraph getLineText(Node ocrLine, Paragraph paragraph, int pageNum, RenderedImage image, PageHighlighter highlighter) {
+    Paragraph getLineText(float indentX, Node ocrLine, Paragraph paragraph, int pageNum, RenderedImage image, PageHighlighter highlighter) {
+        NodeList nodeList = ((org.w3c.dom.Element)ocrLine).getElementsByTagName("span");
+
+        String useSpaces = "                                                                                                                                                                                                                                                                                                                            ";
+        int spaceCount = countSpaces(0, indentX);
+        Phrase startSpaces = new Phrase(useSpaces.substring(0, spaceCount), normalFont);
+        paragraph.add(startSpaces);
+
+        float oldPositionX = indentX;
+        for (int i=0; i<nodeList.getLength(); i++){
+            org.w3c.dom.Element element = (org.w3c.dom.Element) nodeList.item(i);
+            String className = element.getAttribute("class");
+            if ("ocrx_word".equalsIgnoreCase(className)) {
+                String str = getEndString(element);
+                String[] title = element.getAttribute("title").split(" ");
+                float positionX = Float.parseFloat(title[1]);
+
+                if (highlighter.existInHighlight(str, pageNum)) {
+                    anchorIndex++;
+                    highlighter.createAnchorForGlossary(str, anchorIndex, pageNum);
+                    highlighter.createAnchorImageForGlossary(str, anchorIndex, pageNum, element, image);
+                    Anchor anchor = createTarget(str, anchorIndex);
+                    paragraph.add(anchor);
+                }
+                else {
+                    Phrase normal = new Phrase(str+" ", normalFont);
+                    paragraph.add(normal);
+                }
+                spaceCount = countSpaces(str, oldPositionX, positionX);
+                oldPositionX = positionX;
+                Phrase spaces = new Phrase(useSpaces.substring(0, spaceCount), normalFont);
+                paragraph.add(spaces);
+            }
+        }
+        return paragraph;
+    }
+
+    int countSpaces(String str, float oldPositionX, float offsetX) {
+        int spaces = -1;
+        if (offsetX <= oldPositionX) {
+            spaces = 1;
+        }
+        else {
+            int countPixel = str.length() * 12;
+            spaces = (int) ((offsetX - oldPositionX - countPixel) / 7);
+        }
+        return spaces >= 0?spaces:1;
+    }
+
+    int countSpaces(float oldPositionX, float offsetX) {
+        int spaces = (int) ((offsetX - oldPositionX) / 7);
+        return spaces;
+    }
+
+    Paragraph getLineTextOld(Node ocrLine, Paragraph paragraph, int pageNum, RenderedImage image, PageHighlighter highlighter) {
         NodeList nodeList = ((org.w3c.dom.Element)ocrLine).getElementsByTagName("span");
         for (int i=0; i<nodeList.getLength(); i++){
             org.w3c.dom.Element element = (org.w3c.dom.Element) nodeList.item(i);
