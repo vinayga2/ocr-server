@@ -3,6 +3,7 @@ package dynamic.groovy
 import com.itextpdf.text.*
 import com.itextpdf.text.pdf.PdfContentByte
 import com.itextpdf.text.pdf.PdfWriter
+import com.optum.ocr.config.InitializerConfig
 import com.optum.ocr.util.*
 import dynamic.groovy.mbm.ArchivePdf
 import dynamic.groovy.mbm.PageHighlighter
@@ -19,6 +20,7 @@ import javax.xml.parsers.ParserConfigurationException
 import java.awt.image.RenderedImage
 import java.nio.file.Files
 import java.util.List
+import java.util.concurrent.ForkJoinPool
 import java.util.logging.Level
 import java.util.logging.Logger
 import com.optum.ocr.service.*
@@ -66,36 +68,59 @@ class MBMFaxReader extends AbstractImageReader {
                 e.printStackTrace();
             }
         })
-        while (!images.isEmpty()) {
-            List<ImageIndex> tmpLst = new ArrayList<>();
-            for (int i=0; i<3; i++) {
-                if (!images.isEmpty()) {
-                    tmpLst.add(images.remove(0));
+
+        int processors = Runtime.getRuntime().availableProcessors();
+        System.out.println("CPU Cores == "+processors);
+        int parallelism = (int) (processors * 0.70);
+        ForkJoinPool forkJoinPool = new ForkJoinPool(parallelism);
+        if (images.size() > parallelism) {
+            for (int k=0; k<3; k++) {
+                int sizePass = parallelism * (k+1);
+                System.out.println("sizePass == "+sizePass);
+                List<ImageIndex> lst = new ArrayList<>();
+                for (int i=0; i<sizePass; i++) {
+                    if (!images.isEmpty()) {
+                        lst.add(images.remove(0));
+                    }
                 }
+                forkJoinPool.submit { any ->
+                    lst.stream().parallel().forEach({ ind ->
+                        runTesseract(ind, tesseractFolder, tmp);
+                    })
+                }.join();
+                benchmark.log();
             }
-            tmpLst.parallelStream().forEach({ ind ->
-                try {
-                    String fileHocr = "hocr-"+ind.imageIndex+".html";
-                    File fTmpHocr = new File(tmp, fileHocr);
-                    Logger.getGlobal().log(Level.INFO, "Tesseract "+fileHocr);
-
-                    Tesseract1 tesseract = new Tesseract1();
-                    tesseract.setHocr(true);
-                    tesseract.setDatapath(tesseractFolder);
-
-                    String hocr = tesseract.doOCR(ind.imgFile);
-                    Utils.writeToFile(fTmpHocr, hocr);
-                    ind.fileHocr = fileHocr;
-                }
-                catch (Exception e) {
-                    e.printStackTrace();
-                }
-            });
         }
+
+        forkJoinPool.submit { any ->
+            images.stream().parallel().forEach({ ind ->
+                runTesseract(ind, tesseractFolder, tmp);
+            });
+        }.join();
+
         File outFile = new File(folderDone, faxFile.getName());
         Files.deleteIfExists(outFile.toPath());
         Files.move(faxFile.toPath(), outFile.toPath());
         benchmark.log();
+    }
+
+    void runTesseract(ImageIndex ind, String tesseractFolder, File tmp) {
+        try {
+            String fileHocr = "hocr-"+ind.imageIndex+".html";
+            File fTmpHocr = new File(tmp, fileHocr);
+            Logger.getGlobal().log(Level.INFO, "Tesseract "+fileHocr);
+
+            Tesseract1 tesseract = new Tesseract1();
+            tesseract.setHocr(true);
+            tesseract.setDatapath(tesseractFolder);
+
+            String hocr = tesseract.doOCR(ind.imgFile);
+            Utils.writeToFile(fTmpHocr, hocr);
+            ind.fileHocr = fileHocr;
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     void runBatch(String fIn, String folderOut, String folderDone, String tesseractFolder) {
