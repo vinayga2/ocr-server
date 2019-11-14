@@ -282,7 +282,7 @@ class MBMFaxReader extends AbstractImageReader {
 
         Rectangle scaleRec = new Rectangle( (int)(rec.width * 0.5), rec.height );
         img.scaleToFit(scaleRec);
-        img.setAbsolutePosition((int)(rec.width / 2), 200);
+        img.setAbsolutePosition((int)(rec.width / 2), (int) (rec.height * 0.7) / 2);
         canvas.addImage(img);
     }
 
@@ -295,6 +295,7 @@ class MBMFaxReader extends AbstractImageReader {
         paragraph.add(startSpaces);
 
         float oldPositionX = indentX;
+        String oldStr = "";
         for (int i=0; i<nodeList.getLength(); i++){
             org.w3c.dom.Element element = (org.w3c.dom.Element) nodeList.item(i);
             String className = element.getAttribute("class");
@@ -302,73 +303,58 @@ class MBMFaxReader extends AbstractImageReader {
                 String str = getEndString(element);
                 String[] title = element.getAttribute("title").split(" ");
                 float positionX = Float.parseFloat(title[1]);
+                float positionY1 = Float.parseFloat(title[2]);
+                float positionY2 = Float.parseFloat(title[4].replaceAll(";", ""));
+                int height = (int) (positionY2 - positionY1);
+                if (height < 12) {
+                    height = 12;
+                }
+                else if (height > 20) {
+                    height = 20;
+                }
                 int confidence = Integer.parseInt(title[6]);
+
+                spaceCount = countSpaces(oldStr, height, oldPositionX, positionX);
+                oldPositionX = positionX;
+                oldStr = str;
 
                 if (highlighter.existInHighlight(str, pageNum)) {
                     anchorIndex++;
                     highlighter.createAnchorForGlossary(str, anchorIndex, pageNum);
                     highlighter.createAnchorImageForGlossary(str, anchorIndex, pageNum, element, image);
-                    Anchor anchor = createTarget(str, anchorIndex);
+                    Anchor anchor = createTarget(" "+str, anchorIndex, height);
                     paragraph.add(anchor);
                 }
                 else {
                     if (confidence < 30) {
-                        Phrase normal = new Phrase(str+" ", normalMidConfidenceFont);
+                        Phrase normal = new Phrase(useSpaces.substring(0, spaceCount)+str, normalMidConfidenceFont);
                         paragraph.add(normal);
-//                    } else if (confidence < 70) {
-//                        Phrase normal = new Phrase(str+" ", normalMidConfidenceFont);
-//                        paragraph.add(normal);
                     } else {
-                        Phrase normal = new Phrase(str+" ", normalFont);
+                        Phrase normal = new Phrase(useSpaces.substring(0, spaceCount)+str, normalFont);
                         paragraph.add(normal);
                     }
                 }
-                spaceCount = countSpaces(str, oldPositionX, positionX);
-                oldPositionX = positionX;
-                Phrase spaces = new Phrase(useSpaces.substring(0, spaceCount), normalFont);
-                paragraph.add(spaces);
             }
         }
         return paragraph;
     }
 
-    int countSpaces(String str, float oldPositionX, float offsetX) {
+    int countSpaces(String str, int fontHeight, float oldPositionX, float offsetX) {
         int spaces = -1;
         if (offsetX <= oldPositionX) {
             spaces = 1;
         }
         else {
-            int countPixel = str.length() * 12;
-            spaces = (int) ((offsetX - oldPositionX - countPixel) / 7);
+            int countPixel = str.length() * fontHeight;
+            int newOffset = (int) (oldPositionX + countPixel);
+            int remainingPixels = (int) (offsetX - newOffset);
+            spaces = (int) (remainingPixels / fontHeight);
         }
-        return spaces >= 0?spaces:1;
+        return spaces >= 1?spaces:1;
     }
 
     int countSpaces(float oldPositionX, float offsetX) {
         int spaces = (int) ((offsetX - oldPositionX) / 7);
         return spaces;
-    }
-
-    Paragraph getLineTextOld(Node ocrLine, Paragraph paragraph, int pageNum, RenderedImage image, PageHighlighter highlighter) {
-        NodeList nodeList = ((org.w3c.dom.Element)ocrLine).getElementsByTagName("span");
-        for (int i=0; i<nodeList.getLength(); i++){
-            org.w3c.dom.Element element = (org.w3c.dom.Element) nodeList.item(i);
-            String className = element.getAttribute("class");
-            if ("ocrx_word".equalsIgnoreCase(className)) {
-                String str = getEndString(element);
-                if (highlighter.existInHighlight(str, pageNum)) {
-                    anchorIndex++;
-                    highlighter.createAnchorForGlossary(str, anchorIndex, pageNum);
-                    highlighter.createAnchorImageForGlossary(str, anchorIndex, pageNum, element, image);
-                    Anchor anchor = createTarget(str, anchorIndex);
-                    paragraph.add(anchor);
-                }
-                else {
-                    Phrase normal = new Phrase(str+" ", normalFont);
-                    paragraph.add(normal);
-                }
-            }
-        }
-        return paragraph;
     }
 }

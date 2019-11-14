@@ -303,7 +303,8 @@ public abstract class AbstractImageReader {
         return retBytes;
     }
 
-    public Anchor createTarget(String str, int index) {
+    public Anchor createTarget(String str, int index, int height) {
+        com.itextpdf.text.Font boldFont = new com.itextpdf.text.Font(com.itextpdf.text.Font.FontFamily.TIMES_ROMAN, height, com.itextpdf.text.Font.BOLD, BaseColor.BLUE);
         Anchor anchorTarget = new Anchor(str+" ", boldFont);
         anchorTarget.setName("link"+index);
         anchorTarget.setReference("#link10000000");
