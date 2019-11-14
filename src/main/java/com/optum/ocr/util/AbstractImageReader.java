@@ -41,6 +41,10 @@ public abstract class AbstractImageReader {
     protected Map<String, List<Anchor>> anchorMap = new HashMap<>();
     protected int anchorIndex = 0;
 
+    public BufferedImage preProcess(BufferedImage bufferedImage) {
+        return bufferedImage;
+    }
+
     public abstract void runBatch(String fIn, String fOut, String fDone, String tesseractDate);
 
     public String doBatch(String fIn, String fOut, String fDone, String tesseractDate) {

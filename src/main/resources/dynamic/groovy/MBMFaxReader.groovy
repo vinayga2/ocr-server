@@ -5,20 +5,30 @@ import com.itextpdf.text.pdf.ColumnText
 import com.itextpdf.text.pdf.PdfContentByte
 import com.itextpdf.text.pdf.PdfWriter
 import com.optum.ocr.util.*
+import com.sun.media.jai.codec.JPEGEncodeParam
+import com.sun.media.jai.codecimpl.JPEGImageEncoder
 import dynamic.groovy.mbm.ArchivePdf
 import dynamic.groovy.mbm.PageHighlighter
 import net.sourceforge.tess4j.Tesseract1
 import org.apache.pdfbox.pdmodel.PDDocument
+import org.apache.sanselan.ImageInfo
 import org.springframework.web.multipart.MultipartFile
 import org.w3c.dom.*
 import org.xml.sax.SAXException
 
+import javax.imageio.IIOImage
 import javax.imageio.ImageIO
+import javax.imageio.ImageTypeSpecifier
+import javax.imageio.ImageWriteParam
+import javax.imageio.ImageWriter
+import javax.imageio.metadata.IIOInvalidTreeException
+import javax.imageio.metadata.IIOMetadata
+import javax.imageio.metadata.IIOMetadataNode
+import javax.imageio.stream.ImageOutputStream
 import javax.xml.parsers.DocumentBuilder
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.parsers.ParserConfigurationException
 import java.awt.Graphics
-import java.awt.Graphics2D
 import java.awt.image.BufferedImage
 import java.awt.image.RenderedImage
 import java.nio.file.Files
@@ -27,8 +37,6 @@ import java.util.concurrent.ForkJoinPool
 import java.util.logging.Level
 import java.util.logging.Logger
 import com.optum.ocr.service.*
-
-import java.util.stream.IntStream;
 
 class MBMFaxReader extends AbstractImageReader {
     static Graphics graphics;
@@ -64,6 +72,7 @@ class MBMFaxReader extends AbstractImageReader {
         images.parallelStream().forEach({ind ->
             try {
                 ind.image = OcrAlignImage.getAlignedImage( (BufferedImage) ind.image);
+                ind.image = preProcess( (BufferedImage) ind.image);
                 String fileImage = "img-"+ind.imageIndex+".jpg";
                 File fTmp = new File(tmp, fileImage);
                 ImageIO.write(ind.image, "jpg", fTmp);
@@ -107,6 +116,12 @@ class MBMFaxReader extends AbstractImageReader {
         Files.deleteIfExists(outFile.toPath());
         Files.move(faxFile.toPath(), outFile.toPath());
         benchmark.log();
+    }
+
+    BufferedImage preProcess(BufferedImage bufferedImage) {
+        AbstractImageReader imageReader = (AbstractImageReader) new FileObjectExtractor().getGroovyObject("PreProcessImage.groovy");
+        BufferedImage bImage = imageReader.preProcess(bufferedImage);
+        return bImage;
     }
 
     void runTesseract(ImageIndex ind, String tesseractFolder, File tmp) {
@@ -243,7 +258,7 @@ class MBMFaxReader extends AbstractImageReader {
         addBackground(writer, image, rec);
 
         Paragraph paragraph = new Paragraph();
-        Anchor anchor = createTarget("This page is not yet extracted.", anchorIndex++);
+        Anchor anchor = createTarget("This page is not yet extracted.", anchorIndex++, 12);
         paragraph.add(anchor);
 
         document.add(paragraph);
