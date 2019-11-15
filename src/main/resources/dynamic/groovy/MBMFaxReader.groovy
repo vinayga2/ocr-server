@@ -39,6 +39,7 @@ import java.util.logging.Logger
 import com.optum.ocr.service.*
 
 class MBMFaxReader extends AbstractImageReader {
+    int wordCounter = 0;
     static Graphics graphics;
 
     @Override
@@ -186,6 +187,7 @@ class MBMFaxReader extends AbstractImageReader {
 
     @Override
     String createSearchable(String folderOut, String faxFile) {
+        wordCounter = 0;
         File folder = new File(folderOut, faxFile);
         String[] fImages = folder.list(new FilenameFilter() {
             @Override
@@ -207,6 +209,7 @@ class MBMFaxReader extends AbstractImageReader {
             images.add(ind);
         });
         createSearchablePdf(folderOut, faxFile, images);
+        System.out.println("wordCounter == "+wordCounter)
     }
 
     void createSearchablePdf(String fOut, String faxFilename, List<ImageIndex> images) throws FileNotFoundException, DocumentException {
@@ -346,6 +349,7 @@ class MBMFaxReader extends AbstractImageReader {
                     } else {
                         Phrase normal = new Phrase(useSpaces.substring(0, spaceCount)+str, normalFont);
                         paragraph.add(normal);
+                        wordCounter++;
                     }
                 }
             }
