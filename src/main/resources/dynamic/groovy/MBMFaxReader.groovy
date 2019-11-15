@@ -71,7 +71,6 @@ class MBMFaxReader extends AbstractImageReader {
         Logger.getGlobal().log(Level.INFO, "Init Tesseract List");
         images.parallelStream().forEach({ind ->
             try {
-                ind.image = OcrAlignImage.getAlignedImage( (BufferedImage) ind.image);
                 ind.image = preProcess( (BufferedImage) ind.image);
                 String fileImage = "img-"+ind.imageIndex+".jpg";
                 File fTmp = new File(tmp, fileImage);

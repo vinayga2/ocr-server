@@ -1,5 +1,7 @@
 package dynamic.groovy
 
+import com.optum.ocr.util.OcrAlignImage
+
 import javax.imageio.IIOImage
 import javax.imageio.ImageIO
 import javax.imageio.ImageTypeSpecifier
@@ -14,7 +16,8 @@ import java.awt.image.RenderedImage
 
 class PreProcessImage extends MBMFaxReader {
     public BufferedImage preProcess(BufferedImage bufferedImage) {
-        return bufferedImage;
+        BufferedImage bImage = OcrAlignImage.getAlignedImage(bufferedImage);
+        return bImage;
     }
 
     RenderedImage changeDpi(BufferedImage gridImage) {
