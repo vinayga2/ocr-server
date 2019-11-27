@@ -19,49 +19,43 @@ public class UtilityService {
     @Autowired
     FileObjectExtractor fileObjectExtractor;
 
-    public byte[] getPageImage(String folderOut, String faxfile, String page) throws InstantiationException, IllegalAccessException, IOException {
+    public byte[] getPageImage(String companyCode, String ocrFolder, String faxfile, String page) throws InstantiationException, IllegalAccessException, IOException {
         AbstractImageReader imageReader = (AbstractImageReader) fileObjectExtractor.getGroovyObject("MBMFaxReader.groovy");
-        byte[] bytes = imageReader.getPageImage(folderOut, faxfile, page);
+        byte[] bytes = imageReader.getPageImage(companyCode, ocrFolder, faxfile, page);
         return bytes;
     }
 
-    public void ocrUpload(String folderIn, String folderOut, String folderDone, String tesseractFolder, MultipartFile file) throws InstantiationException, IllegalAccessException, IOException {
+    public void ocrUpload(String companyCode, String ocrFolder, String tesseractFolder, MultipartFile file) throws InstantiationException, IllegalAccessException, IOException {
         AbstractImageReader imageReader = (AbstractImageReader) fileObjectExtractor.getGroovyObject("MBMFaxReader.groovy");
-        imageReader.uploadPdfImage(folderIn, folderOut, folderDone, tesseractFolder, file);
+        imageReader.uploadPdfImage(companyCode, ocrFolder, tesseractFolder, file);
     }
 
-    public byte[] ocr(MultipartFile file) throws InstantiationException, IllegalAccessException, IOException {
+    public byte[] ocr(String companyCode, String ocrFolder, MultipartFile file) throws InstantiationException, IllegalAccessException, IOException {
         AbstractImageReader imageReader = (AbstractImageReader) fileObjectExtractor.getGroovyObject("MBMFaxReader.groovy");
-        byte[] bytes = imageReader.extractSearchablePdf(instance, file);
+        byte[] bytes = imageReader.extractSearchablePdf(companyCode, ocrFolder, instance, file);
         return bytes;
     }
 
-    public String ocrBatch(String folderIn, String folderOut, String folderDone, String tesseractDate) throws IllegalAccessException, IOException, InstantiationException {
+    public List<String> ocrFiles(String companyCode, String ocrFolder) throws IllegalAccessException, IOException, InstantiationException {
         AbstractImageReader imageReader = (AbstractImageReader) fileObjectExtractor.getGroovyObject("MBMFaxReader.groovy");
-        String str = imageReader.doBatch(folderIn, folderOut, folderDone, tesseractDate);
-        return str;
-    }
-
-    public List<String> ocrFiles(String folderOut) throws IllegalAccessException, IOException, InstantiationException {
-        AbstractImageReader imageReader = (AbstractImageReader) fileObjectExtractor.getGroovyObject("MBMFaxReader.groovy");
-        List<String> lst = imageReader.getAllFiles(folderOut);
+        List<String> lst = imageReader.getAllFiles(companyCode, ocrFolder);
         return lst;
     }
 
-    public void archiveFile(String folderOut, String file) throws IllegalAccessException, IOException, InstantiationException {
+    public void archiveFile(String companyCode, String ocrFolder, String file) throws IllegalAccessException, IOException, InstantiationException {
         AbstractImageReader imageReader = (AbstractImageReader) fileObjectExtractor.getGroovyObject("MBMFaxReader.groovy");
-        imageReader.archiveFile(folderOut, file);
+        imageReader.archiveFile(companyCode, ocrFolder, file);
     }
 
-    public OcrObj readFile(String folderOut, String file) throws IllegalAccessException, IOException, InstantiationException {
+    public OcrObj readFile(String companyCode, String ocrFolder, String file) throws IllegalAccessException, IOException, InstantiationException {
         AbstractImageReader imageReader = (AbstractImageReader) fileObjectExtractor.getGroovyObject("MBMFaxReader.groovy");
-        OcrObj ocrObj = imageReader.readFile(folderOut, file);
+        OcrObj ocrObj = imageReader.readFile(companyCode, ocrFolder, file);
         return ocrObj;
     }
 
-    public byte[] getSearchablePdf(String folderOut, String faxfile) throws IllegalAccessException, IOException, InstantiationException {
+    public byte[] getSearchablePdf(String companyCode, String ocrFolder, String faxfile) throws IllegalAccessException, IOException, InstantiationException {
         AbstractImageReader imageReader = (AbstractImageReader) fileObjectExtractor.getGroovyObject("MBMFaxReader.groovy");
-        byte[] bytes = imageReader.getSearchablePdf(folderOut, faxfile);
+        byte[] bytes = imageReader.getSearchablePdf(companyCode, ocrFolder, faxfile);
         return bytes;
     }
 
@@ -71,15 +65,15 @@ public class UtilityService {
         return bytes;
     }
 
-    public List<String> viewFaxOnQueue(String folderIn) throws IllegalAccessException, IOException, InstantiationException {
+    public List<String> viewFaxOnQueue(String companyCode, String ocrFolder) throws IllegalAccessException, IOException, InstantiationException {
         AbstractImageReader imageReader = (AbstractImageReader) fileObjectExtractor.getGroovyObject("MBMFaxReader.groovy");
-        List<String> lst = imageReader.viewFaxOnQueue(folderIn);
+        List<String> lst = imageReader.viewFaxOnQueue(companyCode, ocrFolder);
         return lst;
     }
 
-    public String createSearchable(String folderOut, String file) throws IllegalAccessException, IOException, InstantiationException {
+    public String createSearchable(String companyCode, String ocrFolder, String file) throws IllegalAccessException, IOException, InstantiationException {
         AbstractImageReader imageReader = (AbstractImageReader) fileObjectExtractor.getGroovyObject("MBMFaxReader.groovy");
-        String str = imageReader.createSearchable(folderOut, file);
+        String str = imageReader.createSearchable(companyCode, ocrFolder, file);
         return str;
     }
 }

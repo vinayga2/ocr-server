@@ -15,18 +15,17 @@ import java.awt.image.BufferedImage
 import java.awt.image.RenderedImage
 
 class PageHighlighter {
+    String companyCode;
     private String faxFile;
     protected Map<String, List<PageNode>> anchorMapNode = new HashMap<>();
     protected Map<String, List<Anchor>> anchorMap = new HashMap<>();
     protected TextForHighlight textForHighlight;
 
-    PageHighlighter() {
-    }
-
-    void init(String faxFile) {
+    PageHighlighter(String companyCode, String faxFile) {
+        this.companyCode = companyCode;
         this.faxFile = faxFile;
-        textForHighlight = new TextForHighlight();
-        textForHighlight.init(faxFile);
+
+        textForHighlight = new TextForHighlight(companyCode, faxFile);
     }
 
     void addLinkPage(com.itextpdf.text.Document document) throws DocumentException {

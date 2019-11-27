@@ -1,30 +1,18 @@
 package dynamic.groovy
 
 import com.itextpdf.text.*
-import com.itextpdf.text.pdf.ColumnText
 import com.itextpdf.text.pdf.PdfContentByte
 import com.itextpdf.text.pdf.PdfWriter
 import com.optum.ocr.util.*
-import com.sun.media.jai.codec.JPEGEncodeParam
-import com.sun.media.jai.codecimpl.JPEGImageEncoder
 import dynamic.groovy.mbm.ArchivePdf
 import dynamic.groovy.mbm.PageHighlighter
 import net.sourceforge.tess4j.Tesseract1
 import org.apache.pdfbox.pdmodel.PDDocument
-import org.apache.sanselan.ImageInfo
 import org.springframework.web.multipart.MultipartFile
 import org.w3c.dom.*
 import org.xml.sax.SAXException
 
-import javax.imageio.IIOImage
 import javax.imageio.ImageIO
-import javax.imageio.ImageTypeSpecifier
-import javax.imageio.ImageWriteParam
-import javax.imageio.ImageWriter
-import javax.imageio.metadata.IIOInvalidTreeException
-import javax.imageio.metadata.IIOMetadata
-import javax.imageio.metadata.IIOMetadataNode
-import javax.imageio.stream.ImageOutputStream
 import javax.xml.parsers.DocumentBuilder
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.parsers.ParserConfigurationException
@@ -38,24 +26,28 @@ import java.util.logging.Level
 import java.util.logging.Logger
 import com.optum.ocr.service.*
 
+import java.util.stream.Collectors
+
 class MBMFaxReader extends AbstractImageReader {
     int wordCounter = 0;
     static Graphics graphics;
 
     @Override
-    void uploadPdfImage(String fIn, String folderOut, String folderDone, String tesseractFolder, MultipartFile file) throws IOException {
-        super.uploadPdfImage(fIn, folderOut, folderDone, tesseractFolder, file);
+    void uploadPdfImage(String companyCode, String ocrFolder, String tesseractFolder, MultipartFile file) throws IOException {
+        super.uploadPdfImage(companyCode, ocrFolder, tesseractFolder, file);
+
+        File fIn = getFolder(companyCode, ocrFolder, "in");
         File faxFile = new File(fIn, file.getOriginalFilename());
         Thread thread = new Thread(new Runnable() {
             @Override
             void run() {
-                runSingle(folderOut, folderDone, tesseractFolder, faxFile);
+                runSingle(companyCode, ocrFolder, tesseractFolder, faxFile);
             }
         });
         thread.start();
     }
 
-    void runSingle(String folderOut, String folderDone, String tesseractFolder, File faxFile) {
+    void runSingle(String companyCode, String ocrFolder, String tesseractFolder, File faxFile) {
         Benchmark benchmark = new Benchmark(this.getClass());
         benchmark.start("RUN OCR BATCH");
 
@@ -64,6 +56,7 @@ class MBMFaxReader extends AbstractImageReader {
         List<ImageIndex> images = getImageIndex(document);
         document.close();
 
+        File folderOut = getFolder(companyCode, ocrFolder, "out");
         String notif = "<li>    Converting "+faxFile.name+" with "+images.size()+" pages.</li>";
         PushService.broadcast("OCR", notif);
         File tmp = new File(folderOut, faxFile.getName());
@@ -112,6 +105,7 @@ class MBMFaxReader extends AbstractImageReader {
             });
         }.join();
 
+        File folderDone = getFolder(companyCode, ocrFolder, "done");
         File outFile = new File(folderDone, faxFile.getName());
         Files.deleteIfExists(outFile.toPath());
         Files.move(faxFile.toPath(), outFile.toPath());
@@ -143,51 +137,26 @@ class MBMFaxReader extends AbstractImageReader {
         }
     }
 
-    void runBatch(String fIn, String folderOut, String folderDone, String tesseractFolder) {
-        Benchmark benchmark = new Benchmark(this.getClass());
-        benchmark.start("RUN OCR BATCH");
+    @Override
+    void archiveFile(String companyCode, String ocrFolder, String file) {
+        File folderOut = getFolder(companyCode, ocrFolder, "out");
 
-        File folderIn = new File(fIn);
-
-        String str = "";
-        java.util.List<File> listOfFiles = Arrays.asList(folderIn.listFiles()).stream().filter({
-            file ->
-                boolean b = file.name.startsWith("NRS") || file.name.startsWith("KRS") || file.name.startsWith("OHUM");
-                if (b) {
-                    str += "<br>"+file.name;
-                }
-                return b;
-        }).collect();
-        if (!str.isEmpty()) {
-            str = "<li>Batch Started for the following files ["+PushService.notificationTime()+"] .... "+str+"</li>";
-            PushService.broadcast("OCR", str);
-        }
-        listOfFiles.stream().forEach({faxFile ->
-            runSingle(folderOut, folderDone, tesseractFolder, faxFile);
-        })
-        Logger.getGlobal().log(Level.INFO, "########################################PDF Run Batch Complete########################################")
-        Logger.getGlobal().log(Level.INFO, "PDF Count == "+listOfFiles.size());
-        benchmark.log();
-        Logger.getGlobal().log(Level.INFO, "Check timer");
-        PushService.broadcast("OCR", "Conversion Complete.");
-    }
-
-    void archiveFile(String folderOut, String file) {
         ArchivePdf archivePdf = new ArchivePdf();
-        archivePdf.archiveFile(folderOut, file);
+        archivePdf.archiveFile(folderOut.getAbsolutePath(), file);
     }
 
     @Override
-    List<String> viewFaxOnQueue(String fIn) {
-        File folderIn = new File(fIn);
+    List<String> viewFaxOnQueue(String companyCode, String ocrFolder) {
+        File folderIn = getFolder(companyCode, ocrFolder, "in");
         String[] arr = folderIn.list();
         List<String> lst = Arrays.asList(arr);
         return lst;
     }
 
     @Override
-    String createSearchable(String folderOut, String faxFile) {
+    String createSearchable(String companyCode, String ocrFolder, String faxFile) {
         wordCounter = 0;
+        File folderOut = getFolder(companyCode, ocrFolder, "out");
         File folder = new File(folderOut, faxFile);
         String[] fImages = folder.list(new FilenameFilter() {
             @Override
@@ -208,14 +177,14 @@ class MBMFaxReader extends AbstractImageReader {
             ind.fileHocr = hocrFile;
             images.add(ind);
         });
-        createSearchablePdf(folderOut, faxFile, images);
+        createSearchablePdf(companyCode, ocrFolder, faxFile, images);
         System.out.println("wordCounter == "+wordCounter)
     }
 
-    void createSearchablePdf(String fOut, String faxFilename, List<ImageIndex> images) throws FileNotFoundException, DocumentException {
+    void createSearchablePdf(String companyCode, String ocrFolder, String faxFilename, List<ImageIndex> images) throws FileNotFoundException, DocumentException {
         anchorMap = new HashMap<>();
         anchorIndex = 0;
-        File folderOut = new File(fOut);
+        File folderOut = getFolder(companyCode, ocrFolder, "out");
         File tmp = new File(folderOut, faxFilename);
 
         File searchFile = new File(tmp, "Searchable-" + faxFilename);
@@ -224,8 +193,7 @@ class MBMFaxReader extends AbstractImageReader {
         PdfWriter writer = PdfWriter.getInstance(searchablePdf, new FileOutputStream(searchFile));
         searchablePdf.open();
 
-        PageHighlighter highlighter = new PageHighlighter();
-        highlighter.init(faxFilename);
+        PageHighlighter highlighter = new PageHighlighter(companyCode, faxFilename);
         images.stream().forEach({ind ->
             if (ind.fileHocr != null) {
                 int index = ind.imageIndex;

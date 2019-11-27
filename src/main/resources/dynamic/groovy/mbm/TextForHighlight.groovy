@@ -1,6 +1,7 @@
 package dynamic.groovy.mbm
 
 class TextForHighlight {
+    String companyCode;
     String filename;
     List<String> highlight = new ArrayList<>();
 
@@ -52,27 +53,25 @@ class TextForHighlight {
         TPN Tracheostomy Transfer Transfusion Transition Treatment Tube Feedings UAC Utilization Management UVC Ventilation Ventilator VLBW Weaning Weight Weight Gain Weight Loss
     """;
 
-    TextForHighlight() {
-    }
-
-    void init(String f) {
-        filename = f;
-        initText();
+    TextForHighlight(String companyCode, String faxFile) {
+        this.companyCode = companyCode;
+        filename = faxFile;
+        setupHighligher();
     }
 
     List<String> getHighlight() {
         return highlight
     }
 
-    void initText() {
+    void setupHighligher() {
         String mergeText = null;
-        if (filename.startsWith("OHUM")) {
+        if (companyCode.equalsIgnoreCase("OHUM")) {
             mergeText = OHUM;
         }
-        else if (filename.startsWith("KRS")) {
+        else if (companyCode.equalsIgnoreCase("KRS")) {
             mergeText = KRS;
         }
-        else if (filename.startsWith("NRS")) {
+        else if (companyCode.equalsIgnoreCase("NRS")) {
             mergeText = NRS;
         }
         String[] strArr = mergeText.split("[,\\s]");

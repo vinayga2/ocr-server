@@ -41,47 +41,42 @@ public abstract class AbstractImageReader {
     protected Map<String, List<Anchor>> anchorMap = new HashMap<>();
     protected int anchorIndex = 0;
 
-    public BufferedImage preProcess(BufferedImage bufferedImage) {
-        return bufferedImage;
+    protected File getFolder(String companyCode, String ocrFolder, String folder) {
+        File folderCompany = new File(ocrFolder, companyCode);
+        if (!folderCompany.exists()) {
+            folderCompany.mkdir();
+        }
+        File myFolder = null;
+        if (folder != null) {
+            myFolder = new File(folderCompany, folder);
+            if (!myFolder.exists()) {
+                myFolder.mkdir();
+            }
+        }
+        else {
+            myFolder = folderCompany;
+        }
+        return myFolder;
     }
 
-    public abstract void runBatch(String fIn, String fOut, String fDone, String tesseractDate);
-
-    public String doBatch(String fIn, String fOut, String fDone, String tesseractDate) {
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                batchRunning = true;
-                try {
-                    runBatch(fIn, fOut, fDone, tesseractDate);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                batchRunning = false;
-            }
-        });
-        if (batchRunning == false) {
-            t.start();
-            return "Start Run Batch";
-        } else {
-            return "Run Batch Still Running";
-        }
+    public BufferedImage preProcess(BufferedImage bufferedImage) {
+        return bufferedImage;
     }
 
     public List<RectString> readLines(Tesseract instance, MultipartFile file) throws IOException {
         return null;
     }
 
-    public List<String> getAllFiles(String fOut) {
-        File folderOut = new File(fOut);
+    public List<String> getAllFiles(String companyCode, String ocrFolder) {
+        File folderOut = getFolder(companyCode, ocrFolder, "out");
 
         File[] listOfFiles = folderOut.listFiles();
         List<String> lst = Arrays.stream(listOfFiles).filter(file -> file.isDirectory() && !file.getName().startsWith("Archive")).map(file -> file.getName()).collect(Collectors.toList());
         return lst;
     }
 
-    public OcrObj readFile(String fOut, String faxFile) throws IOException {
-        File folderOut = new File(fOut);
+    public OcrObj readFile(String companyCode, String ocrFolder, String faxFile) throws IOException {
+        File folderOut = getFolder(companyCode, ocrFolder, "out");
         File faxFolder = new File(folderOut, faxFile);
         OcrObj ocrObj = new OcrObj();
         ocrObj.fileName = faxFile;
@@ -108,23 +103,26 @@ public abstract class AbstractImageReader {
         return ocrObj;
     }
 
-    public byte[] getSearchablePdf(String fOut, String faxfile) throws IOException {
+    public byte[] getSearchablePdf(String companyCode, String ocrFolder, String faxfile) throws IOException {
+        File folderCompany = new File(ocrFolder, companyCode);
+        File fOut = new File(folderCompany, "out");
         File folderOut = new File(fOut, faxfile);
         byte[] bytes = Utils.readFileBytes(folderOut, "Searchable-" + faxfile);
         return bytes;
     }
 
-    public void uploadPdfImage(String fIn, String folderOut, String folderDone, String tesseractFolder, MultipartFile file) throws IOException {
-        File faxFile = new File(fIn, file.getOriginalFilename());
+    public void uploadPdfImage(String companyCode, String ocrFolder, String tesseractFolder, MultipartFile file) throws IOException {
+        File folderIn = getFolder(companyCode, ocrFolder, "in");
+        File faxFile = new File(folderIn, file.getOriginalFilename());
         byte[] bytes = file.getBytes();
         Files.write(bytes, faxFile);
     }
 
-    public abstract void archiveFile(String folderOut, String file);
+    public abstract void archiveFile(String companyCode, String ocrFolder, String file);
 
-    public abstract List<String> viewFaxOnQueue(String folderIn);
+    public abstract List<String> viewFaxOnQueue(String companyCode, String ocrFolder);
 
-    public abstract String createSearchable(String folderOut, String file);
+    public abstract String createSearchable(String companyCode, String folderOut, String file);
 
     public static class RectString {
         String str;
@@ -136,8 +134,8 @@ public abstract class AbstractImageReader {
         }
     }
 
-    public byte[] getPageImage(String fOut, String faxFile, String page) throws IOException {
-        File folderOut = new File(fOut);
+    public byte[] getPageImage(String companyCode, String ocrFolder, String faxFile, String page) throws IOException {
+        File folderOut = getFolder(companyCode, ocrFolder, "out");
         File faxFolder = new File(folderOut, faxFile);
         File imageFile = new File(faxFolder, page);
 
@@ -267,7 +265,7 @@ public abstract class AbstractImageReader {
         searchablePdf.close();
     }
 
-    public byte[] extractSearchablePdf(Tesseract instance, MultipartFile file) throws IOException {
+    public byte[] extractSearchablePdf(String companyCode, String ocrFolder, Tesseract instance, MultipartFile file) throws IOException {
         byte[] bytes = file.getBytes();
 
         PDDocument document = PDDocument.load(bytes);
