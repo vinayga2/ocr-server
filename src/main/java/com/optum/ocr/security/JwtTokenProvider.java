@@ -6,6 +6,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.ldap.userdetails.LdapUserDetails;
 import org.springframework.security.ldap.userdetails.LdapUserDetailsImpl;
 import org.springframework.stereotype.Component;
@@ -32,6 +34,9 @@ public class JwtTokenProvider {
 
     @Value("${app.jwtExpirationInMs}")
     private int jwtExpirationInMs;
+
+    @Value("${ldap.domain}")
+    private String ldapBaseDn;
 
     public String generateToken(Authentication authentication) {
         LdapUserDetailsImpl userPrincipal = (LdapUserDetailsImpl) authentication.getPrincipal();
@@ -89,7 +94,9 @@ public class JwtTokenProvider {
             String username = getUsername(token);
             LdapUserDetailsImpl.Essence essence = new LdapUserDetailsImpl.Essence();
             essence.setUsername(username);
-            LdapUserDetails userDetails = essence.createUserDetails();
+            essence.setDn(ldapBaseDn);
+            essence.addAuthority(new SimpleGrantedAuthority("USER"));
+            UserDetails userDetails = essence.createUserDetails();
             authentication = new UsernamePasswordAuthenticationToken(userDetails, "", null);
             authenticationCache.store(token, authentication);
         }
