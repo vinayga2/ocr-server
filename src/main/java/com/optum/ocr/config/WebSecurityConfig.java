@@ -1,10 +1,13 @@
 package com.optum.ocr.config;
 
 import com.optum.ocr.security.JwtAuthenticationEntryPoint;
+import com.optum.ocr.security.JwtConfigurer;
+import com.optum.ocr.security.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.BeanIds;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -13,6 +16,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.annotation.web.configurers.oauth2.server.resource.OAuth2ResourceServerConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.password.LdapShaPasswordEncoder;
 import org.springframework.security.ldap.DefaultSpringSecurityContextSource;
 
@@ -50,6 +55,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Value("${ldap.passwordAttribute}")
     private String ldapPasswordAttribute;
 
+    @Autowired
+    JwtTokenProvider jwtTokenProvider;
+
     @Override
     public void configure(WebSecurity web) throws Exception {
         web
@@ -77,16 +85,29 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http
-                .csrf()
-                .disable()
-                .cors()
-                .disable()
-                .exceptionHandling()
-                .authenticationEntryPoint(unauthorizedHandler)
+                .httpBasic().disable()
+                .cors().disable()
+                .csrf().disable()
+                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
                 .authorizeRequests()
-                .antMatchers("/api/auth/**").permitAll()
-                .anyRequest().authenticated();
+                .antMatchers(HttpMethod.POST,"/api/auth/signin").permitAll()
+                .anyRequest().authenticated()
+                .and()
+                .apply(new JwtConfigurer(jwtTokenProvider));
+//        http
+//                .csrf()
+//                .disable()
+//                .cors()
+//                .disable()
+//                .exceptionHandling()
+//                .authenticationEntryPoint(unauthorizedHandler)
+//                .and()
+//                .authorizeRequests()
+//                .antMatchers("/api/auth/**").permitAll()
+//                .anyRequest().authenticated()
+//                .and()
+//                .apply(new JwtConfigurer(jwtTokenProvider));
     }
 
     @Override

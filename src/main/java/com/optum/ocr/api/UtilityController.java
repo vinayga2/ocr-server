@@ -11,6 +11,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,8 +21,8 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.List;
 
-@Controller
 @CrossOrigin(origins = "*", allowedHeaders = "*")
+@Controller
 @RequestMapping("/api/utility")
 @Api(value = "utility", description = "The Utility API", tags = {"Utility"})
 public class UtilityController {
@@ -34,7 +36,7 @@ public class UtilityController {
     UtilityService utilityService;
 
     @PostMapping("/pdf2images/upload")
-    public ResponseEntity<?> pdf2images(@RequestParam("file") MultipartFile file, HttpServletRequest request) throws IllegalAccessException, InstantiationException, IOException {
+    public ResponseEntity<?> pdf2images(@AuthenticationPrincipal UserDetails userDetails, @RequestParam("file") MultipartFile file, HttpServletRequest request) throws IllegalAccessException, InstantiationException, IOException {
         byte[] bytes = utilityService.pdf2images(file);
         Resource resource = new ByteArrayResource(bytes);
         String contentType = "application/octet-stream";
@@ -46,43 +48,43 @@ public class UtilityController {
     }
 
     @GetMapping("/ocr/{companyCode}/createSearchable/{file}")
-    public ResponseEntity<String> createSearchable(@PathVariable("companyCode") String companyCode, @PathVariable("file") String file) throws IllegalAccessException, InstantiationException, IOException {
+    public ResponseEntity<String> createSearchable(@AuthenticationPrincipal UserDetails userDetails, @PathVariable("companyCode") String companyCode, @PathVariable("file") String file) throws IllegalAccessException, InstantiationException, IOException {
         String str = utilityService.createSearchable(companyCode, ocrFolder, file);
         return new ResponseEntity(str, HttpStatus.OK);
     }
 
     @GetMapping("/ocr/{companyCode}/viewFaxOnQueue")
-    public ResponseEntity<List<String>> viewFaxOnQueue(@PathVariable("companyCode") String companyCode) throws IllegalAccessException, InstantiationException, IOException {
+    public ResponseEntity<List<String>> viewFaxOnQueue(@AuthenticationPrincipal UserDetails userDetails, @PathVariable("companyCode") String companyCode) throws IllegalAccessException, InstantiationException, IOException {
         List<String> lst = utilityService.viewFaxOnQueue(companyCode, ocrFolder);
         return new ResponseEntity(lst, HttpStatus.OK);
     }
 
     @GetMapping("/ocr/{companyCode}/files")
-    public ResponseEntity<List<String>> getFiles(@PathVariable("companyCode") String companyCode) throws IllegalAccessException, InstantiationException, IOException {
+    public ResponseEntity<List<String>> getFiles(@AuthenticationPrincipal UserDetails userDetails, @PathVariable("companyCode") String companyCode) throws IllegalAccessException, InstantiationException, IOException {
         List<String> lst = utilityService.ocrFiles(companyCode, ocrFolder);
         return new ResponseEntity(lst, HttpStatus.OK);
     }
 
     @GetMapping("/ocr/{companyCode}/archive/{file}")
-    public ResponseEntity<?> archiveFile(@PathVariable("companyCode") String companyCode, @PathVariable("file") String file) throws IllegalAccessException, InstantiationException, IOException {
+    public ResponseEntity<?> archiveFile(@AuthenticationPrincipal UserDetails userDetails, @PathVariable("companyCode") String companyCode, @PathVariable("file") String file) throws IllegalAccessException, InstantiationException, IOException {
         utilityService.archiveFile(companyCode, ocrFolder, file);
         return new ResponseEntity("Ok", HttpStatus.OK);
     }
 
     @GetMapping("/ocr/{companyCode}/file/{file}")
-    public ResponseEntity<OcrObj> readFile(@PathVariable("companyCode") String companyCode, @PathVariable("file") String file) throws IllegalAccessException, InstantiationException, IOException {
+    public ResponseEntity<OcrObj> readFile(@AuthenticationPrincipal UserDetails userDetails, @PathVariable("companyCode") String companyCode, @PathVariable("file") String file) throws IllegalAccessException, InstantiationException, IOException {
         OcrObj ocrObj = utilityService.readFile(companyCode, ocrFolder, file);
         return new ResponseEntity(ocrObj, HttpStatus.OK);
     }
 
     @PostMapping("/ocr/{companyCode}/upload")
-    public ResponseEntity<?> uploadFax(@PathVariable("companyCode") String companyCode, @RequestParam("file") MultipartFile file, HttpServletRequest request) throws IllegalAccessException, InstantiationException, IOException {
+    public ResponseEntity<?> uploadFax(@AuthenticationPrincipal UserDetails userDetails, @PathVariable("companyCode") String companyCode, @RequestParam("file") MultipartFile file, HttpServletRequest request) throws IllegalAccessException, InstantiationException, IOException {
         utilityService.ocrUpload(companyCode, ocrFolder, tesseractFolder, file);
         return new ResponseEntity("Ok", HttpStatus.OK);
     }
 
     @PostMapping("/ocr/{companyCode}")
-    public ResponseEntity<?> upload(@PathVariable("companyCode") String companyCode, @RequestParam("file") MultipartFile file, HttpServletRequest request) throws IllegalAccessException, InstantiationException, IOException {
+    public ResponseEntity<?> upload(@AuthenticationPrincipal UserDetails userDetails, @PathVariable("companyCode") String companyCode, @RequestParam("file") MultipartFile file, HttpServletRequest request) throws IllegalAccessException, InstantiationException, IOException {
         byte[] bytes = utilityService.ocr(companyCode, ocrFolder, file);
         Resource resource = new ByteArrayResource(bytes);
         String contentType = "application/pdf";
@@ -93,7 +95,7 @@ public class UtilityController {
     }
 
     @GetMapping("/ocr/{companyCode}/searchable/{faxfile}")
-    public ResponseEntity<?> searchablePdf(@PathVariable("companyCode") String companyCode, @PathVariable("faxfile") String faxfile) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException {
+    public ResponseEntity<?> searchablePdf(@AuthenticationPrincipal UserDetails userDetails, @PathVariable("companyCode") String companyCode, @PathVariable("faxfile") String faxfile) throws InstantiationException, IllegalAccessException, ClassNotFoundException, IOException {
         byte[] bytes = utilityService.getSearchablePdf(companyCode, ocrFolder, faxfile);
         Resource resource = new ByteArrayResource(bytes);
         String contentType = "application/pdf";
@@ -104,7 +106,7 @@ public class UtilityController {
     }
 
     @GetMapping("/ocr/{companyCode}/file/{faxfile}/{page}")
-    public ResponseEntity<?> displayOcrPage(@PathVariable("companyCode") String companyCode, @PathVariable("faxfile") String faxfile, @PathVariable("page") String page, HttpServletRequest request) throws InstantiationException, IllegalAccessException, IOException {
+    public ResponseEntity<?> displayOcrPage(@AuthenticationPrincipal UserDetails userDetails, @PathVariable("companyCode") String companyCode, @PathVariable("faxfile") String faxfile, @PathVariable("page") String page, HttpServletRequest request) throws InstantiationException, IllegalAccessException, IOException {
         byte[] bytes = utilityService.getPageImage(companyCode, ocrFolder, faxfile, page);
         String fileName = faxfile+"-"+page+".jpg";
         Resource resource = new ByteArrayResource(bytes);
