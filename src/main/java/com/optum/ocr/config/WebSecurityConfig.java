@@ -78,7 +78,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                         "/swagger-resources/**",
                         "/api-docs**",
                         "/images/**",
-                        "/api/auth/**"
+                        "/api/auth/**",
+                        "/api/ocrFiles/**"
                 );
     }
 
