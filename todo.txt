@@ -1,11 +1,10 @@
 ldap.host=ldap://ad-ldap-prod.uhc.com
 ldap.port=389
 ldap.domain=ms
-ldap.searchbase=dc=ms,dc=ds,dc=uhc,dc=com
+ldap.searchBase=dc=ms,dc=ds,dc=uhc,dc=com
 ldap.searchFilter=(&(objectClass=person)(cn=
 ldap.contextfactory=com.sun.jndi.ldap.LdapCtxFactory
-ldap.username=XYZZ
-ldap.password=XYZ
+
 
 
 

@@ -2,6 +2,7 @@ package com.optum.ocr.api;
 
 import javax.validation.Valid;
 
+import com.optum.ocr.config.OptumLDAP;
 import com.optum.ocr.payload.ApiResponse;
 import com.optum.ocr.payload.JwtAuthenticationResponse;
 import com.optum.ocr.payload.LoginRequest;
@@ -9,11 +10,11 @@ import com.optum.ocr.payload.ValidateTokenRequest;
 import com.optum.ocr.security.JwtTokenProvider;
 import com.optum.ocr.util.MessageConstants;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,20 +29,32 @@ public class AuthController {
     @Autowired
     JwtTokenProvider tokenProvider;
 
+    @Autowired
+    OptumLDAP optumLDAP;
+
+    @Value("${ldap.groups}")
+    private String[] ldapGroups;
+
+    @Value("${ldap.groups}")
+    private String ldapGroupStr;
+
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @PostMapping("/signin")
-    public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) throws Exception {
         if(loginRequest.getUsername().isEmpty() || loginRequest.getPassword().isEmpty()) {
             return new ResponseEntity(new ApiResponse(false, MessageConstants.USERNAME_OR_PASSWORD_INVALID),
                     HttpStatus.BAD_REQUEST);
         }
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        loginRequest.getUsername(),
-                        loginRequest.getPassword()
-                )
-        );
-        String jwt = tokenProvider.generateToken(authentication);
+        boolean hasGroup = optumLDAP.hasAuthority(loginRequest, ldapGroups);
+        if (!hasGroup) {
+            throw new RuntimeException("Access Denied,you must be part of the following group/s ["+ldapGroupStr+"]");
+        }
+        UsernamePasswordAuthenticationToken result = new UsernamePasswordAuthenticationToken(
+                loginRequest.getUsername(),
+                loginRequest.getPassword(),
+                optumLDAP.getAuthorities());
+
+        String jwt = tokenProvider.generateToken(result);
         return ResponseEntity.ok(new JwtAuthenticationResponse(jwt));
     }
 

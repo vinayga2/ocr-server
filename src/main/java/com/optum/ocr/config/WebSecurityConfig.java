@@ -1,6 +1,5 @@
 package com.optum.ocr.config;
 
-import com.optum.ocr.security.JwtAuthenticationEntryPoint;
 import com.optum.ocr.security.JwtConfigurer;
 import com.optum.ocr.security.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,10 +17,13 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.annotation.web.configurers.oauth2.server.resource.OAuth2ResourceServerConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.LdapShaPasswordEncoder;
 import org.springframework.security.ldap.DefaultSpringSecurityContextSource;
 
 import java.util.Collections;
+import java.util.Map;
 
 @Configuration
 @EnableWebSecurity
@@ -31,29 +33,6 @@ import java.util.Collections;
         prePostEnabled = true
 )
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
-    @Value("${ldap.host}")
-    private String ldapHost;
-
-    @Value("${ldap.port}")
-    private String ldapPort;
-
-    @Value("${ldap.domain}")
-    private String ldapBaseDn;
-
-    @Value("${ldap.domainPatterns}")
-    private String ldapDomainPatterns;
-
-//    @Value("${ldap.domain}")
-//    private String ldapDomain;
-
-    @Value("${ldap.searchBase}")
-    private String ldapSearchBase;
-
-    @Value("${ldap.searchFilter}")
-    private String ldapSearchFilter;
-
-    @Value("${ldap.passwordAttribute}")
-    private String ldapPasswordAttribute;
 
     @Autowired
     JwtTokenProvider jwtTokenProvider;
@@ -96,47 +75,11 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .anyRequest().authenticated()
                 .and()
                 .apply(new JwtConfigurer(jwtTokenProvider));
-//        http
-//                .csrf()
-//                .disable()
-//                .cors()
-//                .disable()
-//                .exceptionHandling()
-//                .authenticationEntryPoint(unauthorizedHandler)
-//                .and()
-//                .authorizeRequests()
-//                .antMatchers("/api/auth/**").permitAll()
-//                .anyRequest().authenticated()
-//                .and()
-//                .apply(new JwtConfigurer(jwtTokenProvider));
     }
-
-    @Override
-    public void configure(AuthenticationManagerBuilder auth) throws Exception {
-        //Good to use BcryptEncoder for spring 5.0
-        auth
-                .ldapAuthentication()
-                .userDnPatterns(ldapDomainPatterns)
-                .groupSearchBase(ldapSearchBase)
-//                .groupSearchFilter(ldapSearchFilter)
-                .contextSource(contextSource())
-                .passwordCompare()
-                .passwordEncoder(new LdapShaPasswordEncoder())
-                .passwordAttribute(ldapPasswordAttribute);
-    }
-
-    @Autowired
-    private JwtAuthenticationEntryPoint unauthorizedHandler;
 
     @Bean(BeanIds.AUTHENTICATION_MANAGER)
     @Override
     public AuthenticationManager authenticationManagerBean() throws Exception {
         return super.authenticationManagerBean();
     }
-
-    @Bean
-    public DefaultSpringSecurityContextSource contextSource() {
-        return new DefaultSpringSecurityContextSource(Collections.singletonList(ldapHost+":"+ldapPort), ldapBaseDn);
-    }
-
 }
