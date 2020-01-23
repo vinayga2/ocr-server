@@ -1,4 +1,4 @@
-package com.optum.ocr.repository;
+package com.optum.ocr.bean;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
