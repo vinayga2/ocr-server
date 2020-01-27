@@ -1,6 +1,7 @@
 package com.optum.ocr.config;
 
 import com.optum.ocr.payload.LoginRequest;
+import com.optum.ocr.payload.Profile;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
@@ -28,8 +29,10 @@ public class OptumLDAP {
 
     private static final Logger logger = Logger.getLogger(OptumLDAP.class);
 
-    public boolean hasAuthority(LoginRequest user, String[] groups) throws Exception {
+    public Profile userAuthority(LoginRequest user, String[] groups) throws Exception {
         boolean hasAuthority = false;
+        String fullName = null;
+        String email = null;
         LdapContext ldap = null;
         StringBuilder ldapDetails = new StringBuilder();
         StringBuilder groupsValues = new StringBuilder();
@@ -69,7 +72,7 @@ public class OptumLDAP {
                 logger.info("Ldap Details : " + ldapDetails.toString());
 
                 if (attrs.get("mail") != null && !(attrs.get("mail").size() == 0)) {
-                    String email = attrs.get("mail").toString().substring(attrs.get("mail").toString().indexOf(":") + 1).trim();
+                    email = attrs.get("mail").toString().substring(attrs.get("mail").toString().indexOf(":") + 1).trim();
                     logger.info("Email ID    : " + email);
                     userDetails.put("email", email);
                 }
@@ -95,6 +98,7 @@ public class OptumLDAP {
                     GrantedAuthority grantedAuthority = new LdapAuthority(value, value);
                     authorities.add(grantedAuthority);
                 }
+                fullName = ldapDetails.toString();
                 userDetails.put("fullname", ldapDetails.toString());
                 userDetails.put("employeeid", employeeid);
                 userDetails.put("memberOf", groupsValues.toString());
@@ -116,7 +120,12 @@ public class OptumLDAP {
                 logger.error("Exception occurred:" + e.getMessage());
             }
         }
-        return hasAuthority;
+        Profile profile = new Profile();
+        profile.fullName = fullName;
+        profile.email = email;
+        profile.hasAuthority = hasAuthority;
+
+        return profile;
     }
 
     public List<GrantedAuthority> getAuthorities() {

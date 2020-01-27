@@ -3,10 +3,7 @@ package com.optum.ocr.api;
 import javax.validation.Valid;
 
 import com.optum.ocr.config.OptumLDAP;
-import com.optum.ocr.payload.ApiResponse;
-import com.optum.ocr.payload.JwtAuthenticationResponse;
-import com.optum.ocr.payload.LoginRequest;
-import com.optum.ocr.payload.ValidateTokenRequest;
+import com.optum.ocr.payload.*;
 import com.optum.ocr.security.JwtTokenProvider;
 import com.optum.ocr.util.MessageConstants;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,8 +42,8 @@ public class AuthController {
             return new ResponseEntity(new ApiResponse(false, MessageConstants.USERNAME_OR_PASSWORD_INVALID),
                     HttpStatus.BAD_REQUEST);
         }
-        boolean hasGroup = optumLDAP.hasAuthority(loginRequest, ldapGroups);
-        if (!hasGroup) {
+        Profile profile = optumLDAP.userAuthority(loginRequest, ldapGroups);
+        if (!profile.hasAuthority) {
             throw new RuntimeException("Access Denied,you must be part of the following group/s ["+ldapGroupStr+"]");
         }
         UsernamePasswordAuthenticationToken result = new UsernamePasswordAuthenticationToken(
@@ -54,8 +51,10 @@ public class AuthController {
                 loginRequest.getPassword(),
                 optumLDAP.getAuthorities());
 
-        String jwt = tokenProvider.generateToken(result);
-        return ResponseEntity.ok(new JwtAuthenticationResponse(jwt));
+//        String jwt = tokenProvider.generateToken(result);
+//        return ResponseEntity.ok(new JwtAuthenticationResponse(jwt));
+        profile.token = tokenProvider.generateToken(result);
+        return ResponseEntity.ok(profile);
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
