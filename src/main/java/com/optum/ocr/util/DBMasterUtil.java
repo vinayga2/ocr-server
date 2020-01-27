@@ -11,6 +11,7 @@ package com.optum.ocr.util;
 
 import com.optum.ocr.bean.AbstractIBean;
 import com.optum.ocr.config.DBMasterConfig;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -20,6 +21,13 @@ import java.util.*;
  * @author Budoy Entokwa
  */
 public class DBMasterUtil {
+    public static void executeStatement(String... sqls) {
+        Arrays.stream(sqls).forEach(sql -> {
+            JdbcTemplate jdbcTemplate = new JdbcTemplate(DBMasterConfig.getDataSource());
+            jdbcTemplate.execute(sql);
+        });
+    }
+
     public static AbstractIBean saveRecord(AbstractIBean iBean) {
         boolean isNew = iBean.getId()==null;
         EntityManagerFactory managerFactory = DBMasterConfig.getEntityManager();

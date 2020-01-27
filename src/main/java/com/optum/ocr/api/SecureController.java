@@ -1,5 +1,6 @@
 package com.optum.ocr.api;
 
+import com.optum.ocr.bean.LoginHistory;
 import com.optum.ocr.service.SecureService;
 import io.swagger.annotations.Api;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.io.IOException;
+import java.util.List;
 
 @CrossOrigin(origins = "*", allowedHeaders = "*")
 @Controller
@@ -21,6 +23,12 @@ import java.io.IOException;
 public class SecureController {
     @Autowired
     SecureService service;
+
+    @GetMapping("/allRegistered")
+    public ResponseEntity<List<LoginHistory>> getAllRegistered() throws IllegalAccessException, IOException, InstantiationException {
+        List<LoginHistory> lst = service.getAllRegistered();
+        return new ResponseEntity(lst, HttpStatus.OK);
+    }
 
     @GetMapping("/register/{msId}")
     public ResponseEntity<String> register(@PathVariable("msId") String msId) throws IllegalAccessException, IOException, InstantiationException {

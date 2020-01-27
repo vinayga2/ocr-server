@@ -15,7 +15,7 @@ import java.time.LocalDate;
 
 @Entity
 @Table(name = "LoginHistory")
-public class LoginHistory {
+public class LoginHistory extends AbstractIBean {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "LoginHistoryId")
@@ -23,4 +23,14 @@ public class LoginHistory {
 
     public String msId;
     public LocalDate lastLogin;
+
+    @Override
+    public Long getId() {
+        return LoginHistoryId;
+    }
+
+    @Override
+    public void setId(Long id) {
+        LoginHistoryId = id;
+    }
 }
