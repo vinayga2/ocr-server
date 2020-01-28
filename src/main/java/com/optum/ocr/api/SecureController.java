@@ -58,11 +58,11 @@ public class SecureController {
         byte[] bytes = service.downloadInactiveAccount();
 
         Resource resource = new ByteArrayResource(bytes);
-        String contentType = "application/csv";
+        String contentType = "text/csv";
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(contentType))
                 .cacheControl(CacheControl.noCache())
-                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=InactiveAccount.csv")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=InactiveAccount.csv")
                 .body(resource);
     }
 
@@ -71,11 +71,11 @@ public class SecureController {
         byte[] bytes = service.createSecureFile(fileType);
 
         Resource resource = new ByteArrayResource(bytes);
-        String contentType = "application/csv";
+        String contentType = "text/csv";
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(contentType))
                 .cacheControl(CacheControl.noCache())
-                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename="+secureFile20)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename="+secureFile20)
                 .body(resource);
     }
 }

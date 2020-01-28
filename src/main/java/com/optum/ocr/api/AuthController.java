@@ -49,7 +49,7 @@ public class AuthController {
         UsernamePasswordAuthenticationToken result = new UsernamePasswordAuthenticationToken(
                 loginRequest.getUsername(),
                 loginRequest.getPassword(),
-                optumLDAP.getAuthorities());
+                profile.getAuthorities());
 
 //        String jwt = tokenProvider.generateToken(result);
 //        return ResponseEntity.ok(new JwtAuthenticationResponse(jwt));

@@ -24,17 +24,12 @@ public class OptumLDAP {
     @Autowired
     OptumConfig config;
 
-    List<GrantedAuthority> authorities = new ArrayList<>();
-    Map<String, String> userDetails = new HashMap<>();
-
     private static final Logger logger = Logger.getLogger(OptumLDAP.class);
 
     public Profile userAuthority(LoginRequest user, String[] groups) throws Exception {
-        boolean hasAuthority = false;
-        String fullName = null;
-        String email = null;
+        Profile profile = new Profile();
+
         LdapContext ldap = null;
-        StringBuilder ldapDetails = new StringBuilder();
         StringBuilder groupsValues = new StringBuilder();
         try {
             String filter = config.searchFilter + user.getUsername() + "))";
@@ -61,24 +56,20 @@ public class OptumLDAP {
             if (result.hasMore()) {
                 SearchResult rs = result.next();
                 Attributes attrs = rs.getAttributes();
-                String temp = attrs.get("givenname").toString();
-                logger.info("givenname    : " + temp + temp.substring(temp.indexOf(":") + 1));
-                ldapDetails.append(temp.substring(temp.indexOf(":") + 1).trim());
-                temp = attrs.get("sn").toString();
-                logger.info("sn         : " + temp.substring(temp.indexOf(":") + 1));
-                ldapDetails.append(" ").append(temp.substring(temp.indexOf(":") + 1).trim());
-                //temp = attrs.get("mail").toString();
-                // logger.info("Email ID    : " + temp.substring(temp.indexOf(":")+1));
-                logger.info("Ldap Details : " + ldapDetails.toString());
+                String givenName = attrs.get("givenname").toString();
+                profile.firstName = givenName.substring(givenName.indexOf(":") + 1).trim();
+                logger.info("profile.firstName    : " + profile.firstName);
+
+                String surName = attrs.get("sn").toString();
+                profile.lastName = surName.substring(surName.indexOf(":") + 1).trim();
+                logger.info("profile.lastName         : " + profile.lastName);
 
                 if (attrs.get("mail") != null && !(attrs.get("mail").size() == 0)) {
-                    email = attrs.get("mail").toString().substring(attrs.get("mail").toString().indexOf(":") + 1).trim();
-                    logger.info("Email ID    : " + email);
-                    userDetails.put("email", email);
+                    profile.email = attrs.get("mail").toString().substring(attrs.get("mail").toString().indexOf(":") + 1).trim();
                 }
 
-                String employeeid = attrs.get("employeeid").toString().substring(attrs.get("employeeid").toString().indexOf(":") + 1).trim();
-                logger.info("employeeid : " + employeeid);
+                profile.employeeId = attrs.get("employeeid").toString().substring(attrs.get("employeeid").toString().indexOf(":") + 1).trim();
+                logger.info("profile.employeeId : " + profile.employeeId);
 
                 String memberValue = attrs.get("memberOf").toString();
                 String mvalues = memberValue.substring(memberValue.indexOf(":") + 1);
@@ -92,16 +83,14 @@ public class OptumLDAP {
                     } else if (value.startsWith("pdut_ui")) {
                         groupsValues.append(value).append(",");
                     }
-                    if (!hasAuthority) {
-                        hasAuthority = Arrays.stream(groups).anyMatch(group -> value.equalsIgnoreCase(group));
+                    if (!profile.hasAuthority) {
+                        profile.hasAuthority = Arrays.stream(groups).anyMatch(group -> value.equalsIgnoreCase(group));
                     }
                     GrantedAuthority grantedAuthority = new LdapAuthority(value, value);
-                    authorities.add(grantedAuthority);
+                    profile.authorities.add(grantedAuthority);
                 }
-                fullName = ldapDetails.toString();
-                userDetails.put("fullname", ldapDetails.toString());
-                userDetails.put("employeeid", employeeid);
-                userDetails.put("memberOf", groupsValues.toString());
+                profile.fullName = profile.firstName+" "+profile.lastName;
+                profile.memberOf = groupsValues.toString();
             }
         } catch (final AuthenticationException ex) {
             ex.printStackTrace();
@@ -120,19 +109,6 @@ public class OptumLDAP {
                 logger.error("Exception occurred:" + e.getMessage());
             }
         }
-        Profile profile = new Profile();
-        profile.fullName = fullName;
-        profile.email = email;
-        profile.hasAuthority = hasAuthority;
-
         return profile;
-    }
-
-    public List<GrantedAuthority> getAuthorities() {
-        return authorities;
-    }
-
-    public Map<String, String> getUserDetails() {
-        return userDetails;
     }
 }

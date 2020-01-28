@@ -68,15 +68,31 @@ class GSecureService extends SecureService {
     }
 
     byte[] createSecureFile22() {
-        new byte[0]
+        throw new RuntimeException("Secure File 22 not implemented.");
     }
 
     byte[] createSecureFile21() {
-        new byte[0]
+        throw new RuntimeException("Secure File 21 not implemented.");
     }
 
     byte[] createSecureFile20() {
-        new byte[0]
+        LocalDate last90Days = LocalDate.now().minusDays(90);
+        String sql = "select a from LoginHistory a where a.lastLogin < '${last90Days.dateString}'";
+        List<LoginHistory> lst = (List<LoginHistory>) DBMasterUtil.findAllRecord(sql, 2000);
+        StringBuilder sb = new StringBuilder();
+        sb.append("LastName,FirstName,UniqueIdentifier,RequestType,RoleName,UserId,AccountType,ResourceUserId,ResourceName\n");
+        for (LoginHistory loginHistory:lst) {
+            sb.append(",");                                 //LastName
+            sb.append(",");                                 //FirstName
+            sb.append(",");                                 //UniqueIdentifier
+            sb.append("remove,");                           //RequestType
+            sb.append(",");                                 //RoleName
+            sb.append(loginHistory.msId).append(",");       //UserId
+            sb.append(",");                                 //AccountType
+            sb.append(",");                                 //ResourceUserId
+            sb.append("\n");                                //ResourceName
+        }
+        return sb.toString().getBytes();
     }
 
     @Override
