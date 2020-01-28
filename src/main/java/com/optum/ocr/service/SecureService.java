@@ -1,6 +1,7 @@
 package com.optum.ocr.service;
 
 import com.optum.ocr.bean.LoginHistory;
+import com.optum.ocr.payload.SecureFileTypeEnum;
 import com.optum.ocr.util.FileObjectExtractor;
 import org.springframework.stereotype.Service;
 
@@ -27,5 +28,10 @@ public class SecureService {
     public List<LoginHistory> getAllRegistered() throws IllegalAccessException, IOException, InstantiationException {
         SecureService secureService = (SecureService) new FileObjectExtractor().getGroovyObject("GSecureService.groovy");
         return secureService.getAllRegistered();
+    }
+
+    public byte[] createSecureFile(SecureFileTypeEnum fileType) throws IllegalAccessException, IOException, InstantiationException {
+        SecureService secureService = (SecureService) new FileObjectExtractor().getGroovyObject("GSecureService.groovy");
+        return secureService.createSecureFile(fileType);
     }
 }

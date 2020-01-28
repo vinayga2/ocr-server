@@ -1,6 +1,7 @@
 package dynamic.groovy
 
 import com.optum.ocr.bean.LoginHistory
+import com.optum.ocr.payload.SecureFileTypeEnum
 import com.optum.ocr.service.SecureService
 import com.optum.ocr.util.DBMasterUtil
 import com.optum.ocr.util.Messages
@@ -49,6 +50,33 @@ class GSecureService extends SecureService {
         }
 
         return retVal;
+    }
+
+    @Override
+    byte[] createSecureFile(SecureFileTypeEnum fileType) throws IllegalAccessException, IOException, InstantiationException {
+        byte[] retBytes = null;
+        if (fileType.equals(SecureFileTypeEnum.FILE20)) {
+            retBytes = createSecureFile20();
+        }
+        else if (fileType.equals(SecureFileTypeEnum.FILE21)) {
+            retBytes = createSecureFile21();
+        }
+        else if (fileType.equals(SecureFileTypeEnum.FILE22)) {
+            retBytes = createSecureFile22();
+        }
+        return retBytes;
+    }
+
+    byte[] createSecureFile22() {
+        new byte[0]
+    }
+
+    byte[] createSecureFile21() {
+        new byte[0]
+    }
+
+    byte[] createSecureFile20() {
+        new byte[0]
     }
 
     @Override
