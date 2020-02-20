@@ -34,4 +34,9 @@ public class SecureService {
         SecureService secureService = (SecureService) new FileObjectExtractor().getGroovyObject("GSecureService.groovy");
         return secureService.createSecureFile(fileType);
     }
+
+    public String createAndSendInactiveFile() throws IllegalAccessException, IOException, InstantiationException {
+        SecureService secureService = (SecureService) new FileObjectExtractor().getGroovyObject("GSecureService.groovy");
+        return secureService.createAndSendInactiveFile();
+    }
 }

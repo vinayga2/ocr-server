@@ -1,10 +1,22 @@
 package dynamic.groovy
 
+import com.jcraft.jsch.ChannelSftp
+import com.jcraft.jsch.JSch
+import com.jcraft.jsch.JSchException
+import com.jcraft.jsch.Session
 import com.optum.ocr.bean.LoginHistory
+import com.optum.ocr.config.InitializerConfig
 import com.optum.ocr.payload.SecureFileTypeEnum
 import com.optum.ocr.service.SecureService
 import com.optum.ocr.util.DBMasterUtil
 import com.optum.ocr.util.Messages
+import net.schmizz.sshj.SSHClient
+import net.schmizz.sshj.sftp.SFTPClient
+import net.schmizz.sshj.transport.verification.PromiscuousVerifier
+import org.apache.commons.vfs2.FileObject
+import org.apache.commons.vfs2.FileSystemManager
+import org.apache.commons.vfs2.Selectors
+import org.apache.commons.vfs2.VFS
 
 import java.time.LocalDate
 
@@ -106,5 +118,58 @@ class GSecureService extends SecureService {
             sb.append(loginHistory.msId).append(",").append(loginHistory.lastLogin).append("\n");
         }
         return sb.toString().getBytes();
+    }
+
+    public String createAndSendInactiveFile() throws IllegalAccessException, IOException, InstantiationException {
+        String localFile = "${InitializerConfig.SecureFolder}/${InitializerConfig.SecureFile20}";
+        String remoteFile = "sftp://${InitializerConfig.SecureEcgUsername}:${InitializerConfig.SecureEcgPassword}@${InitializerConfig.SecureEcgServer}${InitializerConfig.SecureEcgFolder}";
+
+        byte[] bytes = createSecureFile20();
+
+        FileWriter myWriter = new FileWriter(localFile);
+        myWriter.write(new String(bytes));
+        myWriter.close();
+
+//        for jSch
+//        ChannelSftp channelSftp = setupJsch();
+//        channelSftp.connect();
+//        String remoteDir = InitializerConfig.SecureEcgFolder;
+//        channelSftp.put(localFile, remoteDir + InitializerConfig.SecureFile20);
+//
+//        channelSftp.exit();
+
+//        for sshClient
+        SSHClient sshClient = setupSshj();
+        SFTPClient sftpClient = sshClient.newSFTPClient();
+
+        sftpClient.put(localFile, InitializerConfig.SecureEcgFolder + InitializerConfig.SecureFile20);
+
+        sftpClient.close();
+        sshClient.disconnect();
+
+//        for VFS - not working
+//        FileSystemManager manager = VFS.getManager();
+//        FileObject local = manager.resolveFile(localFile);
+//        FileObject remote = manager.resolveFile(remoteFile);
+//        remote.copyFrom(local, Selectors.SELECT_SELF);
+//        local.close();
+//        remote.close();
+    }
+
+    private SSHClient setupSshj() throws IOException {
+        SSHClient client = new SSHClient();
+        client.addHostKeyVerifier(new PromiscuousVerifier());
+        client.connect(InitializerConfig.SecureEcgServer);
+        client.authPassword(InitializerConfig.SecureEcgUsername, InitializerConfig.SecureEcgPassword);
+        return client;
+    }
+
+    private ChannelSftp setupJsch() throws JSchException {
+        JSch jsch = new JSch();
+        jsch.setKnownHosts("~/.ssh/known_hosts");
+        Session jschSession = jsch.getSession(InitializerConfig.SecureEcgUsername, InitializerConfig.SecureEcgServer);
+        jschSession.setPassword(InitializerConfig.SecureEcgPassword);
+        jschSession.connect();
+        return (ChannelSftp) jschSession.openChannel("sftp");
     }
 }

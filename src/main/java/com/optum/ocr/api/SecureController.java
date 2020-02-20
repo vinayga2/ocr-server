@@ -1,6 +1,7 @@
 package com.optum.ocr.api;
 
 import com.optum.ocr.bean.LoginHistory;
+import com.optum.ocr.config.InitializerConfig;
 import com.optum.ocr.payload.SecureFileTypeEnum;
 import com.optum.ocr.service.SecureService;
 import io.swagger.annotations.Api;
@@ -25,9 +26,6 @@ import java.util.List;
 public class SecureController {
     @Autowired
     SecureService service;
-
-    @Value("${secure.file.20}")
-    private String secureFile20;
 
     @Value("${secure.file.21}")
     private String secureFile21;
@@ -75,7 +73,21 @@ public class SecureController {
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(contentType))
                 .cacheControl(CacheControl.noCache())
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename="+secureFile20)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename="+InitializerConfig.SecureFile20)
+                .body(resource);
+    }
+
+    @GetMapping("/secure/sendInactiveToSecure")
+    public ResponseEntity<?> secureSendFile() throws IllegalAccessException, IOException, InstantiationException {
+        service.createAndSendInactiveFile();
+        byte[] bytes = service.createSecureFile(SecureFileTypeEnum.FILE20);
+
+        Resource resource = new ByteArrayResource(bytes);
+        String contentType = "text/csv";
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .cacheControl(CacheControl.noCache())
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename="+InitializerConfig.SecureFile20)
                 .body(resource);
     }
 }

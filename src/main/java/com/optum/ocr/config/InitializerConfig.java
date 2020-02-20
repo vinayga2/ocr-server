@@ -26,6 +26,13 @@ public class InitializerConfig {
     public static Environment ENV;
     public static FileObjectExtractor sfileObjectExtractor;
     public static String WebDriver;
+    public static String SecureFolder;
+    public static String SecureFile20;
+
+    public static String SecureEcgServer;
+    public static String SecureEcgFolder;
+    public static String SecureEcgUsername;
+    public static String SecureEcgPassword;
 
     public static ApplicationContext applicationContext;
 
@@ -41,6 +48,20 @@ public class InitializerConfig {
     @Value("${web.driver}")
     private String webDriver;
 
+    @Value("${secure.file.20}")
+    private String secureFile20;
+    @Value("${secure.inactive.folder}")
+    private String secureFolder;
+
+    @Value("${secure.ecg.server}")
+    private String secureEcgServer;
+    @Value("${secure.ecg.folder}")
+    private String secureEcgFolder;
+    @Value("${secure.ecg.username}")
+    private String secureEcgUsername;
+    @Value("${secure.ecg.password}")
+    private String secureEcgPassword;
+
     @Autowired
     private Environment env;
 
@@ -53,6 +74,14 @@ public class InitializerConfig {
         sfileObjectExtractor = fileObjectExtractor;
         ENV = env;
         WebDriver = webDriver;
+        SecureFolder = secureFolder;
+        SecureFile20 = secureFile20;
+
+        SecureEcgServer = secureEcgServer;
+        SecureEcgFolder = secureEcgFolder;
+        SecureEcgUsername = secureEcgUsername;
+        SecureEcgPassword = secureEcgPassword;
+
         FileObjectExtractor.initAllGroovy();
 
         Logger.getGlobal().log(Level.INFO, "hello world, I have just started up");
