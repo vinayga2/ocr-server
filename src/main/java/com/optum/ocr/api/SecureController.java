@@ -77,15 +77,15 @@ public class SecureController {
                 .body(resource);
     }
 
-    @GetMapping("/secure/sendInactiveToSecure")
-    public ResponseEntity<?> secureSendFile() throws IllegalAccessException, IOException, InstantiationException {
-        service.createAndSendInactiveFile();
+    @GetMapping("/secure/createInactiveFile")
+    public ResponseEntity<?> createInactiveFile() throws IllegalAccessException, IOException, InstantiationException {
+        service.createInactiveFile();
         return new ResponseEntity("Ok", HttpStatus.OK);
     }
 
-    @GetMapping("/secure/scheduleAndSendInactiveToSecure")
-    public ResponseEntity<?> scheduleAndSendInactiveToSecure() throws IllegalAccessException, IOException, InstantiationException {
-        service.scheduleSendingInactiveToSecure();
+    @GetMapping("/secure/scheduleFileCreation")
+    public ResponseEntity<?> scheduleFileCreation() throws IllegalAccessException, IOException, InstantiationException {
+        service.scheduleFileCreation();
         return new ResponseEntity("Ok", HttpStatus.OK);
     }
 }

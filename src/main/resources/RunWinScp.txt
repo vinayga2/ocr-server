@@ -1,0 +1,14 @@
+# Connect
+open sftp://is00epk:OJxqjw37@ecgpi.healthtechnologygroup.com -hostkey="ssh-rsa 1024 4c:7d:06:34:f0:56:b2:7b:ad:5b:25:48:4d:91:85:36"
+
+# Change remote directory
+cd /in/secure_inactivity
+
+# Upload the file to current working directory
+put d:\examplefile.txt 
+
+# Disconnect
+close
+
+# Exit WinSCP
+exit
