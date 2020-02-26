@@ -1,9 +1,11 @@
 package dynamic.groovy
 
+import com.jcraft.jsch.Channel
 import com.jcraft.jsch.ChannelSftp
 import com.jcraft.jsch.JSch
 import com.jcraft.jsch.JSchException
 import com.jcraft.jsch.Session
+import com.jcraft.jsch.SftpException
 import com.optum.ocr.bean.LoginHistory
 import com.optum.ocr.config.InitializerConfig
 import com.optum.ocr.payload.SecureFileTypeEnum
@@ -17,10 +19,16 @@ import org.apache.commons.vfs2.FileObject
 import org.apache.commons.vfs2.FileSystemManager
 import org.apache.commons.vfs2.Selectors
 import org.apache.commons.vfs2.VFS
+import org.apache.tools.ant.filters.StringInputStream
 
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit
 
-class GSecureService extends SecureService {
+class GSecureService extends SecureService implements Runnable {
     @Override
     List<LoginHistory> getAllRegistered() throws IllegalAccessException, IOException, InstantiationException {
         List<LoginHistory> lst = DBMasterUtil.findAllRecord("select a from LoginHistory a", 2000);
@@ -120,9 +128,10 @@ class GSecureService extends SecureService {
         return sb.toString().getBytes();
     }
 
-    public String createAndSendInactiveFile() throws IllegalAccessException, IOException, InstantiationException {
+    public void createAndSendInactiveFile() throws IllegalAccessException, IOException, InstantiationException {
         String localFile = "${InitializerConfig.SecureFolder}/${InitializerConfig.SecureFile20}";
-        String remoteFile = "sftp://${InitializerConfig.SecureEcgUsername}:${InitializerConfig.SecureEcgPassword}@${InitializerConfig.SecureEcgServer}${InitializerConfig.SecureEcgFolder}";
+        String timeStr = LocalDateTime.now().format("YYYY-MM-DD_HH:MM");
+        localFile = localFile.replaceAll("_DATETIME_", timeStr);
 
         byte[] bytes = createSecureFile20();
 
@@ -130,46 +139,51 @@ class GSecureService extends SecureService {
         myWriter.write(new String(bytes));
         myWriter.close();
 
-//        for jSch
-//        ChannelSftp channelSftp = setupJsch();
-//        channelSftp.connect();
-//        String remoteDir = InitializerConfig.SecureEcgFolder;
-//        channelSftp.put(localFile, remoteDir + InitializerConfig.SecureFile20);
-//
-//        channelSftp.exit();
-
-//        for sshClient
-        SSHClient sshClient = setupSshj();
-        SFTPClient sftpClient = sshClient.newSFTPClient();
-
-        sftpClient.put(localFile, InitializerConfig.SecureEcgFolder + InitializerConfig.SecureFile20);
-
-        sftpClient.close();
-        sshClient.disconnect();
-
-//        for VFS - not working
-//        FileSystemManager manager = VFS.getManager();
-//        FileObject local = manager.resolveFile(localFile);
-//        FileObject remote = manager.resolveFile(remoteFile);
-//        remote.copyFrom(local, Selectors.SELECT_SELF);
-//        local.close();
-//        remote.close();
+        sendThruJSch(localFile, InitializerConfig.SecureEcgFolder);
     }
 
-    private SSHClient setupSshj() throws IOException {
-        SSHClient client = new SSHClient();
-        client.addHostKeyVerifier(new PromiscuousVerifier());
-        client.connect(InitializerConfig.SecureEcgServer);
-        client.authPassword(InitializerConfig.SecureEcgUsername, InitializerConfig.SecureEcgPassword);
-        return client;
+    public void scheduleSendingInactiveToSecure() {
+        String timeStr = LocalDateTime.now().format("YYYY-MM-DD_HH:mm");
+        System.out.println("Start schedule at ${timeStr}");
+
+        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+
+//Change here for the hour you want ----------------------------------.at()
+//        Long midnight = LocalDateTime.now().until(LocalDate.now().plusDays(1).atStartOfDay(), ChronoUnit.MINUTES);
+//        scheduler.scheduleAtFixedRate(this, midnight, TimeUnit.DAYS.toMinutes(1), TimeUnit.MINUTES);
+
+//        for testing
+        scheduler.scheduleAtFixedRate(this, 1, TimeUnit.MINUTES.toMinutes(1), TimeUnit.MINUTES);
     }
 
-    private ChannelSftp setupJsch() throws JSchException {
+    private void sendThruJSch(String src, String dest) throws JSchException {
         JSch jsch = new JSch();
-        jsch.setKnownHosts("~/.ssh/known_hosts");
-        Session jschSession = jsch.getSession(InitializerConfig.SecureEcgUsername, InitializerConfig.SecureEcgServer);
-        jschSession.setPassword(InitializerConfig.SecureEcgPassword);
-        jschSession.connect();
-        return (ChannelSftp) jschSession.openChannel("sftp");
+        Session session = null;
+        try {
+            session = jsch.getSession(InitializerConfig.SecureEcgUsername, InitializerConfig.SecureEcgServer, 22);
+            session.setConfig("StrictHostKeyChecking", "no");
+            session.setPassword(InitializerConfig.SecureEcgPassword);
+            session.connect();
+
+            Channel channel = session.openChannel("sftp");
+            channel.connect();
+            ChannelSftp sftpChannel = (ChannelSftp) channel;
+            System.out.println("Sending File ${src} to ${InitializerConfig.SecureEcgServer} - ${dest}");
+            sftpChannel.put(src, dest);
+            sftpChannel.exit();
+
+            session.disconnect();
+            System.out.println("Disconnect");
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    void run() {
+        String timeStr = LocalDateTime.now().format("YYYY-MM-DD_HH:mm");
+        System.out.println("Running at ${timeStr}");
+        this.createAndSendInactiveFile();
     }
 }

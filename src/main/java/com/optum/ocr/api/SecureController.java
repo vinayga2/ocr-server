@@ -80,14 +80,12 @@ public class SecureController {
     @GetMapping("/secure/sendInactiveToSecure")
     public ResponseEntity<?> secureSendFile() throws IllegalAccessException, IOException, InstantiationException {
         service.createAndSendInactiveFile();
-        byte[] bytes = service.createSecureFile(SecureFileTypeEnum.FILE20);
+        return new ResponseEntity("Ok", HttpStatus.OK);
+    }
 
-        Resource resource = new ByteArrayResource(bytes);
-        String contentType = "text/csv";
-        return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(contentType))
-                .cacheControl(CacheControl.noCache())
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename="+InitializerConfig.SecureFile20)
-                .body(resource);
+    @GetMapping("/secure/scheduleAndSendInactiveToSecure")
+    public ResponseEntity<?> scheduleAndSendInactiveToSecure() throws IllegalAccessException, IOException, InstantiationException {
+        service.scheduleSendingInactiveToSecure();
+        return new ResponseEntity("Ok", HttpStatus.OK);
     }
 }

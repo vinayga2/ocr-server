@@ -35,8 +35,13 @@ public class SecureService {
         return secureService.createSecureFile(fileType);
     }
 
-    public String createAndSendInactiveFile() throws IllegalAccessException, IOException, InstantiationException {
+    public void createAndSendInactiveFile() throws IllegalAccessException, IOException, InstantiationException {
         SecureService secureService = (SecureService) new FileObjectExtractor().getGroovyObject("GSecureService.groovy");
-        return secureService.createAndSendInactiveFile();
+        secureService.createAndSendInactiveFile();
+    }
+
+    public void scheduleSendingInactiveToSecure() throws IllegalAccessException, IOException, InstantiationException {
+        SecureService secureService = (SecureService) new FileObjectExtractor().getGroovyObject("GSecureService.groovy");
+        secureService.scheduleSendingInactiveToSecure();
     }
 }
