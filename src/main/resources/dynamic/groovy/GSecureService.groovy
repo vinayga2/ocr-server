@@ -116,7 +116,7 @@ class GSecureService extends SecureService implements Runnable {
 
     public void createInactiveFile() throws IllegalAccessException, IOException, InstantiationException {
         String localFile = "${InitializerConfig.SecureFolder}/${InitializerConfig.SecureFile20}";
-        String timeStr = LocalDateTime.now().format("YYYY-MM-DD_HH:MM");
+        String timeStr = LocalDateTime.now().format("YYYY-MM-DD_HH-mm");
         localFile = localFile.replaceAll("_DATETIME_", timeStr);
 
         byte[] bytes = createSecureFile20();
@@ -133,11 +133,11 @@ class GSecureService extends SecureService implements Runnable {
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
 //Change here for the hour you want ----------------------------------.at()
-//        Long midnight = LocalDateTime.now().until(LocalDate.now().plusDays(1).atStartOfDay(), ChronoUnit.MINUTES);
-//        scheduler.scheduleAtFixedRate(this, midnight, TimeUnit.DAYS.toMinutes(1), TimeUnit.MINUTES);
+        Long midnight = LocalDateTime.now().until(LocalDate.now().plusDays(1).atStartOfDay(), ChronoUnit.MINUTES);
+        scheduler.scheduleAtFixedRate(this, midnight, TimeUnit.DAYS.toMinutes(1), TimeUnit.MINUTES);
 
 //        for testing
-        scheduler.scheduleAtFixedRate(this, 1, TimeUnit.MINUTES.toMinutes(1), TimeUnit.MINUTES);
+//        scheduler.scheduleAtFixedRate(this, 1, TimeUnit.MINUTES.toMinutes(1), TimeUnit.MINUTES);
     }
 
     @Override

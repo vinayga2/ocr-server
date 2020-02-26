@@ -1,2 +1,2 @@
-winscp.com /script=RunWinScp.txt
-pause
+"C:/Program Files (x86)/WinSCP/Winscp" /script=RunWinScp.txt
+#pause
