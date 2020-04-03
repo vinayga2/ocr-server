@@ -20,6 +20,7 @@ public class InitializerConfig {
 
     List<Class> allClasses = new ArrayList<>();
 
+    public static boolean WithSecurity;
     public static boolean PROD;
     public static String[] DynamicDirs;
     public static String RuntimeFolder;
@@ -40,6 +41,9 @@ public class InitializerConfig {
     ApplicationContext applicationContextTmp;
     @Autowired
     private FileObjectExtractor fileObjectExtractor;
+
+    @Value("${with.security}")
+    private boolean withSecurity;
 
     @Value("${prod}")
     private boolean prod;
@@ -69,6 +73,7 @@ public class InitializerConfig {
     public void doSomethingAfterStartup() throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
         applicationContext = applicationContextTmp;
 
+        WithSecurity = withSecurity;
         PROD = prod;
         DynamicDirs = dynamicDirs;
         sfileObjectExtractor = fileObjectExtractor;

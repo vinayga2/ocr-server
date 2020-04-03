@@ -2,6 +2,7 @@ package com.optum.ocr.api;
 
 import javax.validation.Valid;
 
+import com.optum.ocr.config.InitializerConfig;
 import com.optum.ocr.config.OptumLDAP;
 import com.optum.ocr.payload.*;
 import com.optum.ocr.security.JwtTokenProvider;
@@ -12,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -38,22 +40,38 @@ public class AuthController {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @PostMapping("/signin")
     public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) throws Exception {
-        if(loginRequest.getUsername().isEmpty() || loginRequest.getPassword().isEmpty()) {
-            return new ResponseEntity(new ApiResponse(false, MessageConstants.USERNAME_OR_PASSWORD_INVALID),
-                    HttpStatus.BAD_REQUEST);
-        }
-        Profile profile = optumLDAP.userAuthority(loginRequest, ldapGroups);
-        if (!profile.hasAuthority) {
-            throw new RuntimeException("Access Denied,you must be part of the following group/s ["+ldapGroupStr+"]");
-        }
-        UsernamePasswordAuthenticationToken result = new UsernamePasswordAuthenticationToken(
-                loginRequest.getUsername(),
-                loginRequest.getPassword(),
-                profile.getAuthorities());
+        Profile profile = null;
+        if (InitializerConfig.WithSecurity) {
+            if(loginRequest.getUsername().isEmpty() || loginRequest.getPassword().isEmpty()) {
+                return new ResponseEntity(new ApiResponse(false, MessageConstants.USERNAME_OR_PASSWORD_INVALID),
+                        HttpStatus.BAD_REQUEST);
+            }
+            profile = optumLDAP.userAuthority(loginRequest, ldapGroups);
+            if (!profile.hasAuthority) {
+                throw new RuntimeException("Access Denied,you must be part of the following group/s ["+ldapGroupStr+"]");
+            }
+            UsernamePasswordAuthenticationToken result = new UsernamePasswordAuthenticationToken(
+                    loginRequest.getUsername(),
+                    loginRequest.getPassword(),
+                    profile.getAuthorities());
 
-//        String jwt = tokenProvider.generateToken(result);
-//        return ResponseEntity.ok(new JwtAuthenticationResponse(jwt));
-        profile.token = tokenProvider.generateToken(result);
+            profile.token = tokenProvider.generateToken(result);
+        }
+        else {
+            profile = new Profile();
+            profile.authorities.add(new GrantedAuthority() {
+                @Override
+                public String getAuthority() {
+                    return "NoSec";
+                }
+            });
+            UsernamePasswordAuthenticationToken result = new UsernamePasswordAuthenticationToken(
+                    loginRequest.getUsername(),
+                    loginRequest.getPassword(),
+                    profile.getAuthorities());
+            profile.fullName = "NoSec";
+            profile.token = tokenProvider.generateToken(result);
+        }
         return ResponseEntity.ok(profile);
     }
 

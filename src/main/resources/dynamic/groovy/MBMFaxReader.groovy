@@ -7,6 +7,7 @@ import com.optum.ocr.util.*
 import dynamic.groovy.mbm.ArchivePdf
 import dynamic.groovy.mbm.PageHighlighter
 import net.sourceforge.tess4j.Tesseract1
+import org.apache.commons.io.FileUtils
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.springframework.web.multipart.MultipartFile
 import org.w3c.dom.*
@@ -109,6 +110,13 @@ class MBMFaxReader extends AbstractImageReader {
         File outFile = new File(folderDone, faxFile.getName());
         Files.deleteIfExists(outFile.toPath());
         Files.move(faxFile.toPath(), outFile.toPath());
+        createSearchable(companyCode, ocrFolder, faxFile.getName());
+
+        File finalFolderTmp = new File(folderOut, faxFile.getName());
+        File sourceFile = new File(finalFolderTmp, "Searchable-" + faxFile.getName());
+        File destFile = new File(finalFolderTmp, "Completed-" + faxFile.getName());
+        FileUtils.copyFile(sourceFile, destFile);
+
         benchmark.log();
     }
 
@@ -158,27 +166,31 @@ class MBMFaxReader extends AbstractImageReader {
         wordCounter = 0;
         File folderOut = getFolder(companyCode, ocrFolder, "out");
         File folder = new File(folderOut, faxFile);
-        String[] fImages = folder.list(new FilenameFilter() {
-            @Override
-            boolean accept(File file, String s) {
-                return s.startsWith("img-");
-            }
-        });
-        Arrays.sort(fImages);
-        List<ImageIndex> images = new ArrayList<>();
-        Arrays.asList(fImages).stream().forEach({ imgFile ->
-            String index = imgFile.replaceAll("img-", "").replaceAll(".jpg", "");
-            String hocrFile = "hocr-" + index + ".html";
-            Logger.getGlobal().log(Level.INFO, imgFile);
-            ImageIndex ind = new ImageIndex();
-            ind.imgFile = new File(folder, imgFile);
-            ind.imageIndex = Integer.parseInt(index);
-            ind.image = Utils.toBufferedImage(ind.imgFile);
-            ind.fileHocr = hocrFile;
-            images.add(ind);
-        });
-        createSearchablePdf(companyCode, ocrFolder, faxFile, images);
-        System.out.println("wordCounter == "+wordCounter)
+        File completedFile = new File(folder, "Completed-" + faxFile);
+        boolean completedFileExists = completedFile.exists();
+        if (!completedFileExists) {
+            String[] fImages = folder.list(new FilenameFilter() {
+                @Override
+                boolean accept(File file, String s) {
+                    return s.startsWith("img-");
+                }
+            });
+            Arrays.sort(fImages);
+            List<ImageIndex> images = new ArrayList<>();
+            Arrays.asList(fImages).stream().forEach({ imgFile ->
+                String index = imgFile.replaceAll("img-", "").replaceAll(".jpg", "");
+                String hocrFile = "hocr-" + index + ".html";
+                Logger.getGlobal().log(Level.INFO, imgFile);
+                ImageIndex ind = new ImageIndex();
+                ind.imgFile = new File(folder, imgFile);
+                ind.imageIndex = Integer.parseInt(index);
+                ind.image = Utils.toBufferedImage(ind.imgFile);
+                ind.fileHocr = hocrFile;
+                images.add(ind);
+            });
+            createSearchablePdf(companyCode, ocrFolder, faxFile, images);
+            System.out.println("wordCounter == "+wordCounter)
+        }
     }
 
     void createSearchablePdf(String companyCode, String ocrFolder, String faxFilename, List<ImageIndex> images) throws FileNotFoundException, DocumentException {

@@ -71,7 +71,16 @@ public abstract class AbstractImageReader {
         File folderOut = getFolder(companyCode, ocrFolder, "out");
 
         File[] listOfFiles = folderOut.listFiles();
-        List<String> lst = Arrays.stream(listOfFiles).filter(file -> file.isDirectory() && !file.getName().startsWith("Archive")).map(file -> file.getName()).collect(Collectors.toList());
+        List<String> lst = Arrays.stream(listOfFiles).filter(file -> file.isDirectory() && !file.getName().startsWith("Archive")).map( file -> {
+            File completedFile = new File(file, "Completed-"+file.getName());
+            boolean completedExists = completedFile.exists();
+            if (completedExists) {
+                return file.getName();
+            }
+            else {
+                return "PENDING-"+file.getName();
+            }
+        }).collect(Collectors.toList());
         return lst;
     }
 
