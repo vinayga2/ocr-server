@@ -1,5 +1,6 @@
 package com.optum.ocr.config;
 
+import com.optum.ocr.util.AbstractImageReader;
 import com.optum.ocr.util.FileObjectExtractor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,6 +35,9 @@ public class InitializerConfig {
     public static String SecureEcgFolder;
     public static String SecureEcgUsername;
     public static String SecureEcgPassword;
+    public static String OcrFolder;
+    public static String TesseractFolder;
+    public static FileObjectExtractor FileObjectExtractor;
 
     public static ApplicationContext applicationContext;
 
@@ -66,6 +70,11 @@ public class InitializerConfig {
     @Value("${secure.ecg.password}")
     private String secureEcgPassword;
 
+    @Value("${ocr.folder}")
+    private String ocrFolder;
+    @Value("${tesseract.data}")
+    private String tesseractFolder;
+
     @Autowired
     private Environment env;
 
@@ -86,10 +95,17 @@ public class InitializerConfig {
         SecureEcgFolder = secureEcgFolder;
         SecureEcgUsername = secureEcgUsername;
         SecureEcgPassword = secureEcgPassword;
+        OcrFolder = ocrFolder;
+        TesseractFolder = tesseractFolder;
+        FileObjectExtractor = fileObjectExtractor;
 
         FileObjectExtractor.initAllGroovy();
-
+        initialize();
         Logger.getGlobal().log(Level.INFO, "hello world, I have just started up");
     }
 
+    public void initialize() throws IllegalAccessException, IOException, InstantiationException {
+        InitializerConfig initializerConfig = (InitializerConfig) fileObjectExtractor.getGroovyObject("GInitializer.groovy");
+        initializerConfig.initialize();
+    }
 }

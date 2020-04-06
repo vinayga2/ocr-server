@@ -7,6 +7,7 @@ import lombok.Data;
 import net.sourceforge.tess4j.Tesseract;
 import net.sourceforge.tess4j.Tesseract1;
 import net.sourceforge.tess4j.TesseractException;
+import org.apache.commons.io.FileUtils;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.springframework.web.multipart.MultipartFile;
@@ -118,6 +119,13 @@ public abstract class AbstractImageReader {
         File folderOut = new File(fOut, faxfile);
         byte[] bytes = Utils.readFileBytes(folderOut, "Searchable-" + faxfile);
         return bytes;
+    }
+
+    public void processPdfImage(String companyCode, String ocrFolder, String tesseractFolder, File file) throws IOException {
+        File folderIn = getFolder(companyCode, ocrFolder, "in");
+        File faxFile = new File(folderIn, file.getName());
+        byte[] bytes = java.nio.file.Files.readAllBytes(file.toPath());
+        Files.write(bytes, faxFile);
     }
 
     public void uploadPdfImage(String companyCode, String ocrFolder, String tesseractFolder, MultipartFile file) throws IOException {

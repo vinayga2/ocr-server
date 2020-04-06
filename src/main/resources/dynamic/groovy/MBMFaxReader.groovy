@@ -34,6 +34,17 @@ class MBMFaxReader extends AbstractImageReader {
     static Graphics graphics;
 
     @Override
+    void processPdfImage(String companyCode, String ocrFolder, String tesseractFolder, File faxFile) throws IOException {
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            void run() {
+                runSingle(companyCode, ocrFolder, tesseractFolder, faxFile);
+            }
+        });
+        thread.start();
+    }
+
+    @Override
     void uploadPdfImage(String companyCode, String ocrFolder, String tesseractFolder, MultipartFile file) throws IOException {
         super.uploadPdfImage(companyCode, ocrFolder, tesseractFolder, file);
 
@@ -64,6 +75,7 @@ class MBMFaxReader extends AbstractImageReader {
         tmp.mkdir();
 
         Logger.getGlobal().log(Level.INFO, "Init Tesseract List");
+        Logger.getGlobal().log(Level.INFO, "Extracting "+faxFile.getName());
         images.parallelStream().forEach({ind ->
             try {
                 ind.image = preProcess( (BufferedImage) ind.image);

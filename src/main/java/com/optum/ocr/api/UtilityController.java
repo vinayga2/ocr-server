@@ -1,5 +1,6 @@
 package com.optum.ocr.api;
 
+import com.optum.ocr.config.InitializerConfig;
 import com.optum.ocr.service.UtilityService;
 import com.optum.ocr.util.OcrObj;
 import io.swagger.annotations.Api;
@@ -34,6 +35,15 @@ public class UtilityController {
 
     @Autowired
     UtilityService utilityService;
+
+    @Autowired
+    InitializerConfig initializerConfig;
+
+    @PostMapping("/initialize")
+    public ResponseEntity<?> initialize() throws IllegalAccessException, InstantiationException, IOException {
+        initializerConfig.initialize();
+        return new ResponseEntity("OK", HttpStatus.OK);
+    }
 
     @PostMapping("/pdf2images/upload")
     public ResponseEntity<?> pdf2images(@AuthenticationPrincipal UserDetails userDetails, @RequestParam("file") MultipartFile file, HttpServletRequest request) throws IllegalAccessException, InstantiationException, IOException {

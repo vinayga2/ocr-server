@@ -59,6 +59,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                         "/images/**",
                         "/api/auth/**",
                         "/api/ocrFiles/**",
+                        "/api/utility/initialize",
                         "/api/secure/**"
                 );
     }
