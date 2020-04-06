@@ -105,7 +105,12 @@ public class InitializerConfig {
     }
 
     public void initialize() throws IllegalAccessException, IOException, InstantiationException {
-        InitializerConfig initializerConfig = (InitializerConfig) fileObjectExtractor.getGroovyObject("GInitializer.groovy");
-        initializerConfig.initialize();
+        try {
+            InitializerConfig initializerConfig = (InitializerConfig) fileObjectExtractor.getGroovyObject("GInitializer.groovy");
+            initializerConfig.initialize();
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

@@ -28,9 +28,17 @@ class GInitializer extends InitializerConfig {
                             System.out.println("inPath = "+inPath);
                             System.out.println("Run for "+pdf.getName());
 
-                            String[] arr = outPath.split("/");
-                            String companyCode = arr[arr.length-3];
-                            System.out.println("arr "+arr);
+                            String companyCode = null;
+                            if (outPath.contains("/")) {
+                                String[] arr = outPath.split("/");
+                                System.out.println("arr "+arr);
+                                companyCode = arr[arr.length-3];
+                            }
+                            else {
+                                String[] arr = outPath.split("\\\\");
+                                System.out.println("arr "+arr);
+                                companyCode = arr[arr.length-3];
+                            }
                             System.out.println("companyCode "+companyCode);
 
                             AbstractImageReader imageReader = (AbstractImageReader) InitializerConfig.FileObjectExtractor.getGroovyObject("MBMFaxReader.groovy");
