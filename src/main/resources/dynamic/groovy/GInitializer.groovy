@@ -2,6 +2,7 @@ package dynamic.groovy
 
 import com.optum.ocr.config.InitializerConfig
 import com.optum.ocr.util.AbstractImageReader
+import com.optum.ocr.util.Tesseract1Pool
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.filefilter.WildcardFileFilter
 import org.springframework.web.multipart.MultipartFile

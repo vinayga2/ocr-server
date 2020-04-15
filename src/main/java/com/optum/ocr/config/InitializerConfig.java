@@ -2,6 +2,7 @@ package com.optum.ocr.config;
 
 import com.optum.ocr.util.AbstractImageReader;
 import com.optum.ocr.util.FileObjectExtractor;
+import com.optum.ocr.util.Tesseract1Pool;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -105,6 +106,8 @@ public class InitializerConfig {
     }
 
     public void initialize() throws IllegalAccessException, IOException, InstantiationException {
+        Tesseract1Pool.initTessPool(InitializerConfig.TesseractFolder, 8);
+
         InitializerConfig initializerConfig = (InitializerConfig) fileObjectExtractor.getGroovyObject("GInitializer.groovy");
         initializerConfig.initialize();
     }
