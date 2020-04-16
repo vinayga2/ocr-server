@@ -8,7 +8,8 @@ class ArchivePdf {
         File folder = new File(folderOut, file);
         File archivedFolder = new File(folderOut, "Archived-"+file);
         try {
-            Files.move(folder.toPath(), archivedFolder.toPath());
+            folder.deleteDir();
+//            Files.move(folder.toPath(), archivedFolder.toPath());
         }
         catch (Exception e) {
             folder.deleteDir();

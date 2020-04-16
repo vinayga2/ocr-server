@@ -21,6 +21,9 @@ public class Benchmark {
 
     public void log() {
         long elapseTime = System.nanoTime() - this.time;
-        logger.log(Level.INFO, cls.getSimpleName() + "-" + this.methodName + " elapse nano time == " + elapseTime + " milli == " + (elapseTime / 1000000));
+        double milli = elapseTime / 1000000;
+        double seconds = Utils.round(milli / 1000);
+        double minutes = Utils.round(seconds / 60);
+        logger.log(Level.INFO, cls.getSimpleName() + "-" + this.methodName + " milli == " + milli + ": seconds == " + seconds + ": minutes == " + minutes);
     }
 }

@@ -108,7 +108,6 @@ class MBMFaxReader extends AbstractImageReader {
                         runTesseract(ind, tesseractFolder, tmp);
                     })
                 }.join();
-                benchmark.log();
             }
         }
 
@@ -141,11 +140,11 @@ class MBMFaxReader extends AbstractImageReader {
     void runTesseract(ImageIndex ind, String tesseractFolder, File tmp) {
         Benchmark benchmark = new Benchmark(this.getClass());
         ObjectPool.ObjectWithIndex tess = Tesseract1Pool.getInstance().checkOut();
-        benchmark.start("INIT TESSERACT "+tess.index);
         try {
             String fileHocr = "hocr-"+ind.imageIndex+".html";
             File fTmpHocr = new File(tmp, fileHocr);
-            Logger.getGlobal().log(Level.INFO, "Tesseract "+fileHocr);
+            benchmark.start("RUN TESSERACT for "+fileHocr);
+//            Logger.getGlobal().log(Level.INFO, "Tesseract "+fileHocr);
 
 //            Tesseract1 tesseract = new Tesseract1();
 //            tesseract.setHocr(true);
