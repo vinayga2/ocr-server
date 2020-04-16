@@ -12,7 +12,7 @@ class ArchivePdf {
         }
         catch (Exception e) {
             folder.deleteDir();
-            e.printStackTrace();
+//            e.printStackTrace();
         }
     }
 }

@@ -78,7 +78,7 @@ public class OcrFilesController {
     }
 
     @PostMapping("/ocr/{companyCode}/upload")
-    public ResponseEntity<?> uploadFax(@PathVariable("companyCode") String companyCode, @RequestParam("file") MultipartFile file, HttpServletRequest request) throws IllegalAccessException, InstantiationException, IOException {
+    public ResponseEntity<List<String>> uploadFax(@PathVariable("companyCode") String companyCode, @RequestParam("file") MultipartFile file, HttpServletRequest request) throws IllegalAccessException, InstantiationException, IOException {
         utilityService.ocrUpload(companyCode, ocrFolder, tesseractFolder, file);
         return new ResponseEntity("Ok", HttpStatus.OK);
     }
