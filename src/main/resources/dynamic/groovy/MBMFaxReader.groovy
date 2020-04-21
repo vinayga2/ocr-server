@@ -35,6 +35,7 @@ import com.optum.ocr.service.*
 import java.util.stream.Collectors
 
 class MBMFaxReader extends AbstractImageReader {
+    Logger logger = Logger.getGlobal();
     int wordCounter = 0;
     static Graphics graphics;
 
@@ -90,10 +91,10 @@ class MBMFaxReader extends AbstractImageReader {
                 ind.imgFile = fTmp;
 
                 if (InitializerConfig.UseTesseractService) {
-                    runTesseractService(ind, tesseractFolder, tmp);
+                    runTesseractService(ind, tmp);
                 }
                 else {
-                    runTesseract(ind, tesseractFolder, tmp);
+                    runTesseract(ind, tmp);
                 }
             }
             catch (Exception e) {
@@ -203,12 +204,13 @@ class MBMFaxReader extends AbstractImageReader {
         return bImage;
     }
 
-    void runTesseractService(ImageIndex ind, String tesseractFolder, File tmp) {
+    void runTesseractService(ImageIndex ind, File tmp) {
         Benchmark benchmark = new Benchmark(this.getClass());
         RestTemplate restTemplate = new RestTemplate();
         MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
 
         String filename = "img-"+ind.imageIndex+".jpg";
+        logger.info("Submit file ${filename}");
         benchmark.start("RUN TESSERACT SERVICE for "+filename);
         File imgFile = new File(tmp, filename);
         byte[] fileContents = imgFile.getBytes();
@@ -231,7 +233,7 @@ class MBMFaxReader extends AbstractImageReader {
         benchmark.log();
     }
 
-    void runTesseract(ImageIndex ind, String tesseractFolder, File tmp) {
+    void runTesseract(ImageIndex ind, File tmp) {
         Benchmark benchmark = new Benchmark(this.getClass());
         ObjectPool.ObjectWithIndex tess = Tesseract1Pool.getInstance().checkOut();
         try {
