@@ -38,6 +38,8 @@ public class InitializerConfig {
     public static String SecureEcgPassword;
     public static String OcrFolder;
     public static String TesseractFolder;
+    public static String TesseractServiceUrl;
+    public static String UseTesseractService;
     public static FileObjectExtractor FileObjectExtractor;
 
     public static ApplicationContext applicationContext;
@@ -75,6 +77,10 @@ public class InitializerConfig {
     private String ocrFolder;
     @Value("${tesseract.data}")
     private String tesseractFolder;
+    @Value("${tesseract.service.url}")
+    private String tesseractServiceUrl;
+    @Value("${use.tesseract.service}")
+    private String useTesseractService;
 
     @Autowired
     private Environment env;
@@ -98,6 +104,8 @@ public class InitializerConfig {
         SecureEcgPassword = secureEcgPassword;
         OcrFolder = ocrFolder;
         TesseractFolder = tesseractFolder;
+        TesseractServiceUrl = tesseractServiceUrl;
+        UseTesseractService = useTesseractService;
         FileObjectExtractor = fileObjectExtractor;
 
         FileObjectExtractor.initAllGroovy();

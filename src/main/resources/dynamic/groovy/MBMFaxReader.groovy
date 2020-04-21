@@ -3,12 +3,17 @@ package dynamic.groovy
 import com.itextpdf.text.*
 import com.itextpdf.text.pdf.PdfContentByte
 import com.itextpdf.text.pdf.PdfWriter
+import com.optum.ocr.config.InitializerConfig
 import com.optum.ocr.util.*
 import dynamic.groovy.mbm.ArchivePdf
 import dynamic.groovy.mbm.PageHighlighter
 import net.sourceforge.tess4j.Tesseract1
 import org.apache.commons.io.FileUtils
 import org.apache.pdfbox.pdmodel.PDDocument
+import org.springframework.core.io.ByteArrayResource
+import org.springframework.util.LinkedMultiValueMap
+import org.springframework.util.MultiValueMap
+import org.springframework.web.client.RestTemplate
 import org.springframework.web.multipart.MultipartFile
 import org.w3c.dom.*
 import org.xml.sax.SAXException
@@ -83,6 +88,57 @@ class MBMFaxReader extends AbstractImageReader {
                 File fTmp = new File(tmp, fileImage);
                 ImageIO.write(ind.image, "jpg", fTmp);
                 ind.imgFile = fTmp;
+
+                if (InitializerConfig.UseTesseractService) {
+                    runTesseractService(ind, tesseractFolder, tmp);
+                }
+                else {
+                    runTesseract(ind, tesseractFolder, tmp);
+                }
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
+        })
+
+        File folderDone = getFolder(companyCode, ocrFolder, "done");
+        File outFile = new File(folderDone, faxFile.getName());
+        Files.deleteIfExists(outFile.toPath());
+        Files.move(faxFile.toPath(), outFile.toPath());
+        createSearchable(companyCode, ocrFolder, faxFile.getName());
+
+        File finalFolderTmp = new File(folderOut, faxFile.getName());
+        File sourceFile = new File(finalFolderTmp, "Searchable-" + faxFile.getName());
+        File destFile = new File(finalFolderTmp, "Completed-" + faxFile.getName());
+        FileUtils.copyFile(sourceFile, destFile);
+
+        benchmark.log();
+    }
+
+    void runSingleOld(String companyCode, String ocrFolder, String tesseractFolder, File faxFile) {
+        Benchmark benchmark = new Benchmark(this.getClass());
+        benchmark.start("RUN OCR BATCH");
+
+        byte[] bytes = faxFile.getBytes();
+        PDDocument document = PDDocument.load(bytes);
+        List<ImageIndex> images = getImageIndex(document);
+        document.close();
+
+        File folderOut = getFolder(companyCode, ocrFolder, "out");
+        String notif = "<li>    Converting "+faxFile.name+" with "+images.size()+" pages.</li>";
+        PushService.broadcast("OCR", notif);
+        File tmp = new File(folderOut, faxFile.getName());
+        tmp.mkdir();
+
+        Logger.getGlobal().log(Level.INFO, "Init Tesseract List");
+        Logger.getGlobal().log(Level.INFO, "Extracting "+faxFile.getName());
+        images.parallelStream().forEach({ind ->
+            try {
+                ind.image = preProcess( (BufferedImage) ind.image);
+                String fileImage = "img-"+ind.imageIndex+".jpg";
+                File fTmp = new File(tmp, fileImage);
+                ImageIO.write(ind.image, "jpg", fTmp);
+                ind.imgFile = fTmp;
             }
             catch (Exception e) {
                 e.printStackTrace();
@@ -105,7 +161,12 @@ class MBMFaxReader extends AbstractImageReader {
                 }
                 forkJoinPool.submit { any ->
                     lst.stream().parallel().forEach({ ind ->
-                        runTesseract(ind, tesseractFolder, tmp);
+                        if (InitializerConfig.UseTesseractService) {
+                            runTesseractService(ind, tesseractFolder, tmp);
+                        }
+                        else {
+                            runTesseract(ind, tesseractFolder, tmp);
+                        }
                     })
                 }.join();
             }
@@ -113,7 +174,12 @@ class MBMFaxReader extends AbstractImageReader {
 
         forkJoinPool.submit { any ->
             images.stream().parallel().forEach({ ind ->
-                runTesseract(ind, tesseractFolder, tmp);
+                if (InitializerConfig.UseTesseractService) {
+                    runTesseractService(ind, tesseractFolder, tmp);
+                }
+                else {
+                    runTesseract(ind, tesseractFolder, tmp);
+                }
             });
         }.join();
 
@@ -137,6 +203,34 @@ class MBMFaxReader extends AbstractImageReader {
         return bImage;
     }
 
+    void runTesseractService(ImageIndex ind, String tesseractFolder, File tmp) {
+        Benchmark benchmark = new Benchmark(this.getClass());
+        RestTemplate restTemplate = new RestTemplate();
+        MultiValueMap<String, Object> map = new LinkedMultiValueMap<String, Object>();
+
+        String filename = "img-"+ind.imageIndex+".jpg";
+        benchmark.start("RUN TESSERACT SERVICE for "+filename);
+        File imgFile = new File(tmp, filename);
+        byte[] fileContents = imgFile.getBytes();
+        ByteArrayResource contentsAsResource = new ByteArrayResource(fileContents) {
+            @Override
+            public String getFilename() {
+                return filename; // Filename has to be returned in order to be able to post.
+            }
+        };
+
+        map.add("name", filename);
+        map.add("filename", filename);
+        map.add("file", contentsAsResource);
+
+        // Now you can send your file along.
+        String result = restTemplate.postForObject(InitializerConfig.TesseractServiceUrl, map, String.class);
+
+        File hocrFile = new File(tmp, "hocr-"+ind.imageIndex+".html");
+        Utils.writeToFile(hocrFile, result);
+        benchmark.log();
+    }
+
     void runTesseract(ImageIndex ind, String tesseractFolder, File tmp) {
         Benchmark benchmark = new Benchmark(this.getClass());
         ObjectPool.ObjectWithIndex tess = Tesseract1Pool.getInstance().checkOut();
@@ -144,11 +238,6 @@ class MBMFaxReader extends AbstractImageReader {
             String fileHocr = "hocr-"+ind.imageIndex+".html";
             File fTmpHocr = new File(tmp, fileHocr);
             benchmark.start("RUN TESSERACT for "+fileHocr);
-//            Logger.getGlobal().log(Level.INFO, "Tesseract "+fileHocr);
-
-//            Tesseract1 tesseract = new Tesseract1();
-//            tesseract.setHocr(true);
-//            tesseract.setDatapath(tesseractFolder);
             Tesseract1 tesseract = (Tesseract1) tess.obj;
 
             String hocr = tesseract.doOCR(ind.imgFile);
